@@ -69,6 +69,9 @@ https://github.com/zenwor/sciml26_gjepa
 
 Our team repo from the course: https://github.com/paumartinez160/sciml26_gjepa
 
+**Presentation:** [Slides from the Petnica Summer Institute]
+(https://canva.link/7dgujdjexcuhrbe)
+
 Ideas we're building on: LeCun (2022), Assran et al. (2023, I-JEPA), Hu et al. (2020, GINE),
 Tsuboyama et al. (2023, MegaScale).
 
