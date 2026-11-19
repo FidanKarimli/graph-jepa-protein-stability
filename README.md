@@ -75,7 +75,7 @@ To try this, we:
 To make this concrete, here is one real protein from SCOP, first as a fold and then as the graph
 the model actually sees (233 residues, 4,288 edges, about 18 neighbours per residue):
 
-![A protein as a fold and as a graph](figures/protein_as_graph.png)
+
 
 ## What we found so far
 
@@ -98,8 +98,6 @@ Pretraining helped on every metric. We're glad about that, but we don't want to 
 
 These are our pretraining diagnostics. The JEPA loss (left) rises after the first epochs,
 the embedding spread stays above zero (middle), but the effective rank (right) stays low:
-
-![Pretraining diagnostics: JEPA loss, embedding std, effective rank](figures/pretraining_diagnostics.png)
 
 ## What we want to do next
 
