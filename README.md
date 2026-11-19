@@ -9,19 +9,23 @@ and we liked it enough that we wanted to keep going. This repo is where we do th
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Proteins in 60 seconds
+## Why one tiny change can break a protein
 
-- **Amino acids** are the 20 building blocks of proteins. Each has the same backbone and a
-  different side chain, and that side chain gives it its personality (greasy, charged, bulky, tiny).
-- A protein is a **chain of hundreds of amino acids** that folds itself into a specific 3D shape.
-  The shape is what lets it do its job, like an enzyme gripping a molecule or an antibody
-  recognizing a virus.
-- A **mutation** swaps one amino acid for another. Often nothing happens. Sometimes that one swap
-  is enough to make the whole protein wobble and unfold.
-- **ΔΔG** measures this: how much more or less stable the mutant is compared to the original
-  (ΔΔG = ΔG<sub>mutant</sub> − ΔG<sub>wild-type</sub>). Its sign says whether the mutation
-  stabilizes or destabilizes the protein, and the sign convention differs between datasets.
-  Predicting it from structure is our task.
+Imagine a necklace made of hundreds of beads, where every bead is one of 20 types. Some beads
+are sticky, some repel water, some carry a charge, some are bulky and some are tiny. Now let the
+necklace crumple up on its own. The beads pull and push on each other until the chain settles
+into one precise 3D shape. That is a protein, the beads are amino acids, and the shape is
+everything: it is what lets an enzyme grip its target or an antibody recognize a virus.
+
+Now swap a single bead. Most of the time the necklace doesn't care. But swap the wrong bead in
+the wrong place, say a tiny one for a bulky one in the tightly packed core, and the whole shape
+can loosen and fall apart. That swap is a **mutation**, and the number that tells us how much
+it shakes the protein is **ΔΔG**: the stability of the mutant minus the stability of the original
+(ΔΔG = ΔG<sub>mutant</sub> − ΔG<sub>wild-type</sub>). In MegaScale, a negative value means the
+mutation destabilizes the protein.
+
+Measuring ΔΔG in a lab means making the mutant and testing it, one at a time. Predicting it from
+the structure alone would save a huge amount of work. That is the game we are playing here.
 
 ## What we're trying to do
 
@@ -41,6 +45,11 @@ To try this, we:
 3. Fine-tune on MegaScale (Tsuboyama et al., Nature 2023): 271,231 stability measurements across
    862 proteins. The train and test sets share no proteins.
 
+To make this concrete, here is one real protein from SCOP, first as a fold and then as the graph
+the model actually sees (233 residues, 4,288 edges, about 18 neighbours per residue):
+
+![A protein as a fold and as a graph](figures/protein_as_graph.png)
+
 ## What we found so far
 
 | Model | RMSE | Spearman | Spearman per protein |
@@ -59,6 +68,11 @@ Pretraining helped on every metric. We're glad about that, but we don't want to 
   0.725 pretrained on this same data and split, but it pretrains on far more data. We don't expect
   to match that.
 - TODO: how many seeds the ± values come from, and exact training settings.
+
+These are our pretraining diagnostics. The JEPA loss (left) rises after the first epochs,
+the embedding spread stays above zero (middle), but the effective rank (right) stays low:
+
+![Pretraining diagnostics: JEPA loss, embedding std, effective rank](figures/pretraining_diagnostics.png)
 
 ## What we want to do next
 
