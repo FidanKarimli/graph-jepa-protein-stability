@@ -9,23 +9,50 @@ and we liked it enough that we wanted to keep going. This repo is where we do th
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Why one tiny change can break a protein
+## A short guide to proteins
 
-Imagine a necklace made of hundreds of beads, where every bead is one of 20 types. Some beads
-are sticky, some repel water, some carry a charge, some are bulky and some are tiny. Now let the
-necklace crumple up on its own. The beads pull and push on each other until the chain settles
-into one precise 3D shape. That is a protein, the beads are amino acids, and the shape is
-everything: it is what lets an enzyme grip its target or an antibody recognize a virus.
+Proteins are the molecular machines of life. They speed up reactions, carry molecules around,
+pass signals and build the scaffolding of our cells. For machine learning they are special:
+a protein is a biological object and structured data at the same time. It can be a sequence,
+a set of 3D coordinates or, in this project, a graph.
 
-Now swap a single bead. Most of the time the necklace doesn't care. But swap the wrong bead in
-the wrong place, say a tiny one for a bulky one in the tightly packed core, and the whole shape
-can loosen and fall apart. That swap is a **mutation**, and the number that tells us how much
-it shakes the protein is **ΔΔG**: the stability of the mutant minus the stability of the original
-(ΔΔG = ΔG<sub>mutant</sub> − ΔG<sub>wild-type</sub>). In MegaScale, a negative value means the
-mutation destabilizes the protein.
+### 1. Amino acids: the building blocks
 
-Measuring ΔΔG in a lab means making the mutant and testing it, one at a time. Predicting it from
-the structure alone would save a huge amount of work. That is the game we are playing here.
+Every amino acid shares the same backbone, a central carbon with an amine group on one side
+and a carboxyl group on the other. What changes is the **side chain** (the R group). Some
+side chains repel water, some are charged, some are bulky and some are tiny, and this variety
+decides how a chain folds and how the finished protein behaves.
+
+![The structure of an amino acid](figures/amino_acid.svg)
+
+### 2. From sequence to shape
+
+Link amino acids together and you get a chain, like a necklace of beads with 20 possible bead
+types. But the chain doesn't stay straight. It crumples into one precise 3D shape, and that
+shape is what lets an enzyme grip its target or an antibody recognize a virus. Biologists
+describe this in four levels:
+
+![Four levels of protein structure](figures/structure_levels.svg)
+
+- **Primary:** the sequence of amino acids
+- **Secondary:** local patterns such as helices and sheets
+- **Tertiary:** the full 3D arrangement of one chain
+- **Quaternary:** several chains assembling into one machine
+
+### 3. Mutations: small changes with large effects
+
+Now swap a single bead. Most of the time the protein doesn't care. But put the wrong amino
+acid in the wrong place, say a bulky one in the tightly packed core, and the whole fold can
+loosen and fall apart.
+
+![A chain of beads folds into a shape, and one swapped bead can make it come apart](figures/necklace_mutation.svg)
+
+The number that tells us how much a mutation shakes the protein is **ΔΔG**, the stability of
+the mutant minus the stability of the original (ΔΔG = ΔG<sub>mutant</sub> − ΔG<sub>wild-type</sub>).
+In MegaScale, a negative value means the mutation destabilizes the protein.
+
+Measuring ΔΔG in a lab means making each mutant and testing it, one at a time. Predicting it
+from the structure alone would save a huge amount of work, and that is the game we play here.
 
 ## What we're trying to do
 
