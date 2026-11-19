@@ -5,6 +5,24 @@ and we liked it enough that we wanted to keep going. This repo is where we do th
 
 **Authors:** Fidan Karimli and Pau Martínez
 
+[![Slides](https://img.shields.io/badge/Slides-Canva-00C4CC?logo=canva&logoColor=white)](https://canva.link/7dgujdjexcuhrbe)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+## Proteins in 60 seconds
+
+- **Amino acids** are the 20 building blocks of proteins. Each has the same backbone and a
+  different side chain, and that side chain gives it its personality (greasy, charged, bulky, tiny).
+- A protein is a **chain of hundreds of amino acids** that folds itself into a specific 3D shape.
+  The shape is what lets it do its job, like an enzyme gripping a molecule or an antibody
+  recognizing a virus.
+- A **mutation** swaps one amino acid for another. Often nothing happens. Sometimes that one swap
+  is enough to make the whole protein wobble and unfold.
+- **ΔΔG** measures this: how much more or less stable the mutant is compared to the original
+  (ΔΔG = ΔG<sub>mutant</sub> − ΔG<sub>wild-type</sub>). Its sign says whether the mutation
+  stabilizes or destabilizes the protein, and the sign convention differs between datasets.
+  Predicting it from structure is our task.
+
 ## What we're trying to do
 
 A single mutation can change one amino acid in a protein, and that can be enough to make the
@@ -68,9 +86,6 @@ Thank you to our mentor and the Petnica team for the course materials and code t
 https://github.com/zenwor/sciml26_gjepa
 
 Our team repo from the course: https://github.com/paumartinez160/sciml26_gjepa
-
-**Presentation:** [Slides from the Petnica Summer Institute]
-(https://canva.link/7dgujdjexcuhrbe)
 
 Ideas we're building on: LeCun (2022), Assran et al. (2023, I-JEPA), Hu et al. (2020, GINE),
 Tsuboyama et al. (2023, MegaScale).
