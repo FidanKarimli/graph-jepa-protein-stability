@@ -451,7 +451,17 @@ Do these in order. Each step ends with something you can look at, and a check th
    Add teacher, predictor, vector loss, rank logging.
    Done when: `test_ema_update` passes, effective rank is logged every epoch and does not collapse to about 1, fine-tuning runs.
 
-6. **Arm D, both.**
+6. **Arm D, both. Seed 0 run 2026-11-20 on SCOPe, lambda 0.45.**
+
+   Pretraining is nearly indistinguishable from arm C: letter accuracy 0.270 against C's 0.269, rank 62.6 against 61.6. The letter loss dominates even at lambda 0.45. Two things differ. At epoch 1 arm D's rank was **47.3**, not arm B's 7.7, so **the letter loss prevents the collapse outright**. And arm D's vector loss plateaus at 0.269, roughly twice arm B's 0.131: with the embedding space constrained by the letter task, latent prediction is genuinely harder and the degenerate shortcut is unavailable.
+
+   **ddG result, seed 0, frozen: pooled 0.643, per-protein median 0.700, RMSE 0.758** (the best RMSE of any arm). Against arm C's 0.641 and 0.696 that is a tie on both Spearman metrics, well inside the threshold.
+
+   **H2 holds, as a tie.** An objective that is actively harmful alone, costing 0.084, becomes harmless in company. ProteinJEPA found the combination best; we find it tied, so the same direction with a weaker effect.
+
+   Pilot ordering, seed 0: **D ≈ C > A > B**.
+
+   Original step 6 text:
    Combine losses with the chosen λ.
    Done when: both losses decrease in the log.
 

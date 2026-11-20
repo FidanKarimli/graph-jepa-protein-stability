@@ -80,10 +80,11 @@ def run(cfg, device=None, verbose=True):
                                     shuffle=(split == "train"))
 
     target = cfg.get("pretrain", {}).get("target")       # unset for arm A
+    corpus = cfg.get("pretrain", {}).get("corpus")
     pretrained = ft.get("pretrained")
     if pretrained is None and target:
         pretrained = (Path(cfg["pretrain"]["checkpoint_dir"])
-                      / f"encoder_{cfg['arm']}_seed{seed}.pt")
+                      / f"encoder_{cfg['arm']}_{corpus}_seed{seed}.pt")
     if pretrained and not Path(pretrained).exists():
         raise FileNotFoundError(f"no pretrained encoder at {pretrained}; "
                                 f"run pobj.train.pretrain for arm {cfg['arm']} first")
@@ -130,6 +131,7 @@ def run(cfg, device=None, verbose=True):
         "arm": cfg.get("arm"),
         "seed": seed,
         "pretrain": target or "none",
+        "corpus": corpus if target else "none",
         "pretrained_from": str(pretrained or ""),
         "finetune_mode": ft["mode"],
         "best_epoch": best["epoch"],
@@ -149,6 +151,7 @@ def main():
     parser.add_argument("--config", required=True)
     parser.add_argument("--base", default="configs/base.yaml")
     parser.add_argument("--seed", type=int)
+    parser.add_argument("--corpus", choices=["scope", "alphafold"])
     parser.add_argument("--mode", choices=["frozen", "full"],
                         help="override finetune.mode, to separate the effect of "
                              "pretraining from the effect of freezing")
@@ -159,6 +162,8 @@ def main():
         cfg["seed"] = args.seed
     if args.mode is not None:
         cfg["finetune"]["mode"] = args.mode
+    if args.corpus is not None:
+        cfg["pretrain"]["corpus"] = args.corpus
     cfg["config_path"] = args.config
 
     row = run(cfg)

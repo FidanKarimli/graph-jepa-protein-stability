@@ -29,6 +29,11 @@ from ..models.heads import LetterHead, Predictor
 from ..utils import append_row, get_device, git_commit, load_config, set_seed
 
 
+def run_tag(cfg):
+    """Names a run by arm, corpus and seed, so two corpora never share a checkpoint."""
+    return f"{cfg['arm']}_{cfg['pretrain']['corpus']}_seed{cfg['seed']}"
+
+
 def split_graphs(graphs, val_fraction, seed):
     """A held-out slice of the corpus, so letter accuracy is measured on unseen structures."""
     order = torch.randperm(len(graphs), generator=torch.Generator().manual_seed(seed))
@@ -164,9 +169,10 @@ def run(cfg, device=None, limit=None, verbose=True, resume=True):
         lambda s: (s + 1) / warmup if s < warmup
         else 0.5 * (1 + math.cos(math.pi * (s - warmup) / max(1, steps - warmup))))
 
-    log_path = Path(cfg["results_dir"]) / f"pretrain_{cfg['arm']}_seed{seed}.csv"
+    tag = run_tag(cfg)
+    log_path = Path(cfg["results_dir"]) / f"pretrain_{tag}.csv"
     generator = torch.Generator().manual_seed(seed)
-    state_path = Path(pt["checkpoint_dir"]) / f"state_{cfg['arm']}_seed{seed}.pt"
+    state_path = Path(pt["checkpoint_dir"]) / f"state_{tag}.pt"
 
     first_epoch = 0
     if resume and state_path.exists():
@@ -237,7 +243,7 @@ def run(cfg, device=None, limit=None, verbose=True, resume=True):
                               **{f"train_{k}": v for k, v in train_log.items()},
                               **{f"val_{k}": v for k, v in val_log.items()}})
 
-    path = Path(pt["checkpoint_dir"]) / f"encoder_{cfg['arm']}_seed{seed}.pt"
+    path = Path(pt["checkpoint_dir"]) / f"encoder_{tag}.pt"
     torch.save(encoder.state_dict(), path)
 
     elapsed = time.time() - start
@@ -249,7 +255,7 @@ def run(cfg, device=None, limit=None, verbose=True, resume=True):
         print(f"encoder saved to {path}")
         print(f"log written to {log_path}")
     return {"checkpoint": str(path), "pretrain_time_s": round(elapsed, 1),
-            "git_commit": git_commit()}
+            "n_pretrain_structures": len(train), "git_commit": git_commit()}
 
 
 def main():
