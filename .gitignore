@@ -7,7 +7,8 @@ __pycache__/
 # Downloads and caches. Everything here is rebuilt by scripts/download_*.sh and
 # scripts/build_pretrain_set.py. The id lists under data/processed are committed
 # with `git add -f`, since they record exactly which structures we pretrained on.
-data/
+# The leading slash matters: a bare `data/` would also ignore src/pobj/data/.
+/data/
 
 # Model weights, too large and reproducible from the configs
 results/checkpoints/
