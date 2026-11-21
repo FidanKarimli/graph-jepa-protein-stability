@@ -1,134 +1,191 @@
-# Graph-JEPA for Protein Stability Prediction
+# Does it matter what you predict?
 
-We started this project at the Petnica Summer Institute (Scientific Machine Learning, August 2026),
-and we liked it enough that we wanted to keep going. This repo is where we do that.
+**Latent vs masked-residue pretraining for protein stability.**
 
-**Authors:** Fidan Karimli and Pau Martínez
+A graph network can learn about proteins without any lab measurements, by hiding part of a
+structure and guessing what was there. This repository asks what the guess should be:
 
-[![Slides](https://img.shields.io/badge/Slides-Canva-00C4CC?logo=canva&logoColor=white)](https://canva.link/7dgujdjexcuhrbe)
+- **the letter** — which of the 20 amino acids was hidden, or
+- **the vector** — what embedding a slowly updated copy of the network would give that
+  position (a JEPA objective), or
+- **both.**
+
+Everything else is held fixed — the same graph, encoder, corpus, masking rate, optimiser
+and seeds — so any difference comes from the pretraining target alone. Each pretrained
+model is then used to predict how much a single mutation destabilises a protein (ΔΔG).
+
+**Authors:** Fidan Karimli and Pau Martínez. Started at the Petnica Summer Institute
+(Scientific Machine Learning, August 2026); this is the follow-up experiment.
+
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## A short guide to proteins
+---
 
-Proteins are the molecular machines of life. They speed up reactions, carry molecules around,
-pass signals and build the scaffolding of our cells. For machine learning they are special:
-a protein is a biological object and structured data at the same time. It can be a sequence,
-a set of 3D coordinates or, in this project, a graph.
+## Results
 
-### 1. Amino acids: the building blocks
+Three seeds per arm, 11,566 SCOPe domains for pretraining, MegaScale for the task, on one
+A100. Arms B, C and D fine-tune a **frozen** encoder; arm A has nothing to freeze, so it
+trains everything.
 
-Every amino acid shares the same backbone, a central carbon with an amine group on one side
-and a carboxyl group on the other. What changes is the **side chain** (the R group). Some
-side chains repel water, some are charged, some are bulky and some are tiny, and this variety
-decides how a chain folds and how the finished protein behaves.
+| Arm | Pretraining target | Pooled Spearman | Per-protein median | RMSE | Effective rank |
+|---|---|---|---|---|---|
+| A | none | 0.605 ± 0.008 | 0.643 ± 0.011 | 0.802 ± 0.011 | — |
+| B | vector | **0.506 ± 0.023** | 0.539 ± 0.018 | 0.903 ± 0.015 | **74.2 ± 2.3** |
+| C | letter | 0.640 ± 0.005 | 0.688 ± 0.005 | 0.767 ± 0.006 | 61.9 ± 0.5 |
+| D | letter + 0.45 × vector | **0.643 ± 0.008** | **0.692 ± 0.010** | 0.768 ± 0.005 | 62.6 ± 0.3 |
 
-![The structure of an amino acid](figures/amino_acid.svg)
+A difference under 0.012 pooled, or 0.016 per-protein, is a tie. That threshold is two
+standard deviations of arm A across seeds, and it was fixed **before** any pretrained arm
+was run.
 
-### 2. From sequence to shape
+### What we found
 
-Link amino acids together and you get a chain, like a necklace of beads with 20 possible bead
-types. But the chain doesn't stay straight. It crumples into one precise 3D shape, and that
-shape is what lets an enzyme grip its target or an antibody recognize a virus. Biologists
-describe this in four levels:
+**1. Pretraining helps, but only with the right target.** Letter pretraining beats the
+baseline by 0.035, with a *frozen* encoder that never saw a single stability measurement,
+against a baseline that trained its whole network on 215,000 labelled mutations.
 
-![Four levels of protein structure](figures/structure_levels.svg)
+**2. The wrong target actively hurts.** Vector-only pretraining lands 0.099 *below* random
+initialisation. Unfrozen, under exactly the baseline's protocol, it is still below it. The
+encoder is a worse starting point than no pretraining at all, and training only partly
+undoes the damage.
 
-- **Primary:** the sequence of amino acids
-- **Secondary:** local patterns such as helices and sheets
-- **Tertiary:** the full 3D arrangement of one chain
-- **Quaternary:** several chains assembling into one machine
+**3. The standard diagnostic points the wrong way.** Effective rank — the RankMe quantity,
+widely used as a label-free proxy for representation quality — ranks the arms in exactly
+the reverse of how they transfer. Arm B spreads across 74 of 128 dimensions and performs
+worst; arm C uses 62 and performs best.
 
-### 3. Mutations: small changes with large effects
+![Effective rank through pretraining](results/figures/effective_rank.png)
 
-Now swap a single bead. Most of the time the protein doesn't care. But put the wrong amino
-acid in the wrong place, say a bulky one in the tightly packed core, and the whole fold can
-loosen and fall apart.
+Arm B's curve explains a puzzle the earlier project recorded but could not account for: its
+JEPA loss rose during training. At epoch 1 the model **collapses** — every residue maps to
+nearly the same vector, and the loss falls to 0.007 because predicting a constant is
+trivial (rank 7.7). Then the EMA teacher makes that constant unstable, the representation
+spreads back out, and the task gets genuinely harder, so **the loss rises as the model
+escapes collapse**. With a moving target, a falling loss is not evidence of progress.
 
-![A chain of beads folds into a shape, and one swapped bead can make it come apart](figures/necklace_mutation.svg)
+And escaping collapse is not the same as learning something useful.
 
-The number that tells us how much a mutation shakes the protein is **ΔΔG**, the stability of
-the mutant minus the stability of the original (ΔΔG = ΔG<sub>mutant</sub> − ΔG<sub>wild-type</sub>).
-In MegaScale, a negative value means the mutation destabilizes the protein.
+**4. A harmful objective becomes harmless in company.** Alone, the vector loss costs 0.099.
+Added alongside the letter loss at λ = 0.45 it costs nothing — arm D ties arm C — and it
+prevents the collapse entirely: at epoch 1 arm D's rank was 47.3, not 7.7.
 
-Measuring ΔΔG in a lab means making each mutant and testing it, one at a time. Predicting it
-from the structure alone would save a huge amount of work, and that is the game we play here.
+**5. The vector arm is also unstable.** Its seed spread is ±0.023 against arm C's ±0.005.
 
-## What we're trying to do
+![Test score by arm](results/figures/arm_comparison.png)
 
-A single mutation can change one amino acid in a protein, and that can be enough to make the
-protein fall apart. Measuring how much a mutation changes stability (ΔΔG) in the lab is slow and
-expensive. Protein structures, on the other hand, are plentiful and have no labels at all.
+Reference points, not targets: ThermoMPNN reports 0.725 on this test set with far heavier
+pretraining, and 0.642 from scratch.
 
-So we asked a simple question: if a model first learns from lots of unlabeled structures, does it
-need less labeled data to predict stability afterwards?
+---
 
-To try this, we:
+## How it works
 
-1. Turn each protein into a graph. Residues are nodes, and residues that are close in 3D are connected.
-2. Pretrain a graph neural network (GINE) on 6,782 unlabeled structures from SCOP, using a
-   Joint-Embedding Predictive Architecture (JEPA). The model learns to predict the embedding of a
-   hidden part of the protein from the rest.
-3. Fine-tune on MegaScale (Tsuboyama et al., Nature 2023): 271,231 stability measurements across
-   862 proteins. The train and test sets share no proteins.
+**The task.** MegaScale (Tsuboyama et al. 2023) measured the stability of every
+single-residue mutant of hundreds of small protein domains: 271,231 measurements across 298
+proteins, split train/validation/test **by protein** at 25% sequence identity, so no test
+protein resembles anything seen in training.
 
-To make this concrete, here is one real protein from SCOP, first as a fold and then as the graph
-the model actually sees (233 residues, 4,288 edges, about 18 neighbours per residue):
+**The graph.** One node per residue at its Cα atom, joined to its 16 nearest neighbours in
+3D. 62.5% of edges join residues more than 4 apart in the chain — contacts created by
+folding, which a sequence model cannot see. Node features are backbone torsions, edge
+features are distances and sequence separation.
 
+**The leak rule.** No input feature may reveal which amino acid a residue is, or the letter
+arm could read the answer instead of predicting it. Only backbone atoms are used, never
+side chains. `tests/test_graph.py` enforces this by relabelling a residue and requiring
+every geometric feature to be bit-identical.
 
+**The encoder.** Four GINEConv layers, 128 dimensions. Residue identity and backbone
+geometry are embedded separately and added, so masking replaces only the identity and the
+geometry stays visible.
 
-## What we found so far
+**Pretraining.** 20% of residues are replaced by a learned mask token. Arm C predicts their
+letters, arm B predicts an EMA teacher's embedding of them from the unmasked graph, arm D
+does both.
 
-| Model | RMSE | Spearman | Spearman per protein |
-|---|---|---|---|
-| from scratch | 0.7084 ± 0.0140 | 0.5476 ± 0.0135 | 0.5946 ± 0.0125 |
-| pretrained | 0.6798 ± 0.0122 | 0.5997 ± 0.0035 | 0.6307 ± 0.0098 |
+**Fine-tuning.** One batch item is one protein carrying all of its mutations, so 215,000
+training examples cost 239 encoder passes per epoch.
 
-Pretraining helped on every metric. We're glad about that, but we don't want to oversell it:
+---
 
-- We only pretrained for 20 epochs. That is short.
-- The embeddings look partly collapsed. The effective rank was around 5–8 out of 128 dimensions,
-  so the model is using only a small part of the space it has. The JEPA loss also went up during
-  training instead of down, which is the opposite of what you'd normally hope for. We don't fully
-  understand this yet.
-- Our setup is small. For reference, ThermoMPNN (PNAS 2024) gets Spearman 0.642 from scratch and
-  0.725 pretrained on this same data and split, but it pretrains on far more data. We don't expect
-  to match that.
-- TODO: how many seeds the ± values come from, and exact training settings.
-
-These are our pretraining diagnostics. The JEPA loss (left) rises after the first epochs,
-the embedding spread stays above zero (middle), but the effective rank (right) stays low:
-
-## What we want to do next
-
-- [ ] Reproduce the baseline cleanly, with fixed seeds and the exact protocol written down
-- [ ] Understand and fix the collapse (and write up what we tried, including what didn't work)
-- [ ] Compare architectures: GINEConv vs GAT vs Graph Transformer
-- [ ] Use the full backbone geometry (N, Cα, C, O atoms) instead of just residues
-- [ ] See how much pretraining data matters (a scaling curve)
-- [ ] See how much labeled data pretraining saves us (a label-efficiency curve)
-- [ ] Write a blog post about all of it
-
-## Running it
-
-This project builds on the course library, which we don't copy here:
+## Reproducing it
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv && source .venv/bin/activate
+pip install torch                       # or the CUDA build your driver supports
+pip install torch_geometric pandas scipy scikit-learn matplotlib pyyaml tqdm pytest tabulate
+pip install -e .
+
+bash scripts/download_megascale.sh      # 90 MB, labels and splits
+bash scripts/download_structures.sh     # 13 MB, wild-type structures
+bash scripts/download_scope.sh          # 1 GB, pretraining corpus
+
+pytest tests/ -q                        # 45 tests: data alignment, leak rule, EMA, metrics
+
+bash scripts/run_grid.sh                # 4 arms x 3 seeds, ~2 h on an A100
+python scripts/make_report.py           # tables and figures
 ```
 
-The data downloads itself the first time you use it.
+`data/processed/pretrain_ids.txt` lists exactly which 11,566 SCOPe domains were used, so
+the corpus is reproducible without re-running the similarity filter. Rebuilding it needs
+MMseqs2 and `scripts/build_pretrain_set.py`.
 
-## Credits and thanks
+Individual runs:
 
-Thank you to our mentor and the Petnica team for the course materials and code this builds on:
-https://github.com/zenwor/sciml26_gjepa
+```bash
+python -m pobj.train.pretrain --config configs/arm_c.yaml --seed 0
+python -m pobj.train.finetune --config configs/arm_c.yaml --seed 0
+```
 
-Our team repo from the course: https://github.com/paumartinez160/sciml26_gjepa
+### Layout
 
-Ideas we're building on: LeCun (2022), Assran et al. (2023, I-JEPA), Hu et al. (2020, GINE),
-Tsuboyama et al. (2023, MegaScale).
+```
+src/pobj/
+  data/      megascale.py  graph.py  features.py  masking.py  pretrain_set.py  dataset.py
+  models/    encoder.py  heads.py  ema.py
+  eval/      metrics.py  rank.py
+  train/     pretrain.py  finetune.py
+configs/     base.yaml + one file per arm
+scripts/     downloads, the grid runner, the report
+results/     runs.csv, per-epoch logs, figures
+docs/        progress.md, the full record of what we did and found
+```
+
+---
+
+## Leakage, and why we were strict about it
+
+Any pretraining structure resembling a MegaScale protein could let the model meet a test
+protein before evaluation. We search all pretraining sequences against the 298 MegaScale
+proteins with MMseqs2 at its most sensitive setting and remove **every** hit at
+e-value ≤ 1e-3 — not only those above 30% identity, because remote homologues can share a
+fold. That removed 225 of 11,791 SCOPe domains, of which 218 were already above 30%
+identity, so the stricter rule cost 7 extra domains. The removed list is kept in
+`data/processed/removed_similar.txt`.
+
+## Limits
+
+- **28 test proteins.** Small, and the per-protein median over so few is noisy.
+- One encoder, one stability dataset, one pretraining corpus, three seeds. This is a
+  controlled small experiment, not a ranking of methods in general.
+- Effective rank is measured on held-out **pretraining** residues, so it describes the
+  space the model trained in rather than the one it transfers to.
+- Pretraining domains have a median of 126 residues against MegaScale's 48.
+- Not yet tried: a λ sweep, label-efficiency curves, a frozen random encoder, longer
+  pretraining (arm B's rank was still rising at epoch 99), and linear probes to say *what*
+  the letter arm learned that the vector arm did not.
+
+## Credits
+
+Thanks to our mentor and the Petnica team for the course this grew out of:
+<https://github.com/zenwor/sciml26_gjepa>. Our team repo from the course:
+<https://github.com/paumartinez160/sciml26_gjepa>.
+
+Building on: Tsuboyama et al. 2023 (MegaScale), Dieckhaus et al. 2024 (ThermoMPNN),
+Ofer et al. 2026 (ProteinJEPA), Jamasb et al. 2024 (ProteinWorkshop), Garrido et al. 2023
+(RankMe), Assran et al. 2023 (I-JEPA), Hu et al. 2020 (GINE).
 
 ## License
 
-Our own code here is MIT licensed (see LICENSE). The course library keeps its own terms.
+MIT, see [LICENSE](LICENSE).

@@ -3,6 +3,11 @@
 Running record of what we built, what we found and what we decided. Updated as we go.
 Last updated 2026-11-20. Plan of record: `../Project_IDEA.md`.
 
+**Status.** The main experiment is **done**: 4 arms × 3 seeds on an A100, SCOPe corpus.
+Every finding from the Mac pilot held. A second, larger corpus (AlphaFold) is still
+downloading, and the same grid will be run on it to see whether more pretraining data
+changes the ordering.
+
 ---
 
 ## 1. The question
@@ -33,18 +38,41 @@ stability task.
 
 ---
 
-## 2. Headline results so far
+## 2. Headline results
 
-One seed, SCOPe corpus. Seeds 1 and 2 still to run.
+**Three seeds per arm, SCOPe corpus (11,566 domains), A100.** Arms B, C and D fine-tune a
+frozen encoder; arm A has nothing to freeze, so it trains everything. Effective rank is
+measured on 80,275 held-out pretraining residues.
 
 | Arm | pooled Spearman | per-protein median | RMSE | effective rank |
 |---|---|---|---|---|
-| A — none (full) | 0.604 ± 0.006 | 0.642 ± 0.008 | 0.808 | — |
-| B — vector (frozen) | 0.520 | 0.571 | 0.897 | **84.3** |
-| B — vector (full) | 0.560 | 0.617 | 0.864 | |
-| C — letter (frozen) | 0.641 | 0.696 | 0.778 | 61.6 |
-| C — letter (full) | 0.631 | 0.675 | 0.786 | |
-| **D — both (frozen)** | **0.643** | **0.700** | **0.758** | 62.6 |
+| A — none | 0.605 ± 0.008 | 0.643 ± 0.011 | 0.802 ± 0.011 | — |
+| B — vector | **0.506 ± 0.023** | 0.539 ± 0.018 | 0.903 ± 0.015 | **74.2 ± 2.3** |
+| C — letter | 0.640 ± 0.005 | 0.688 ± 0.005 | 0.767 ± 0.006 | 61.9 ± 0.5 |
+| D — both | **0.643 ± 0.008** | **0.692 ± 0.010** | 0.768 ± 0.005 | 62.6 ± 0.3 |
+
+Two checks that the earlier single-seed runs could not give us:
+
+**The baseline reproduces across hardware.** Arm A scored 0.604 ± 0.006 on an Apple M4 Pro
+and 0.605 ± 0.008 on an A100 — different chips, different floating-point arithmetic, same
+answer. That is a strong check on the whole pipeline, and the reason we re-ran everything
+rather than mixing machines.
+
+**Arm B is not only worse, it is less stable.** Its seed spread is ±0.023 against arm C's
+±0.005, four times noisier. The vector objective produces features that are both weaker and
+more dependent on initialisation.
+
+The Mac pilot, kept for comparison, also ran each arm with a full (unfrozen) encoder:
+
+| Arm, pilot, seed 0 | frozen | full |
+|---|---|---|
+| A, none | - | 0.609 |
+| B, vector | 0.520 | 0.560 |
+| C, letter | 0.641 | 0.631 |
+
+Arm C is better frozen and arm B better unfrozen, which is itself evidence that the
+difference between them is feature quality rather than protocol: good features are worth
+keeping, bad ones are worth overwriting.
 
 Reference points, not targets: ThermoMPNN reports 0.725 on this test set with much heavier
 pretraining, and 0.642 from scratch. The earlier Petnica project got 0.548 from scratch and
@@ -53,14 +81,14 @@ pretraining, and 0.642 from scratch. The earlier Petnica project got 0.548 from 
 **Three findings.**
 
 1. **Pretraining helps, but only with the right target.** Letter pretraining beats the
-   no-pretraining baseline by 0.037 pooled and 0.054 per-protein, roughly three times the
-   tie threshold. It does so with a **frozen** encoder that never saw a single ΔΔG value,
+   no-pretraining baseline by 0.035 pooled and 0.045 per-protein, several times the tie
+   threshold. It does so with a **frozen** encoder that never saw a single ΔΔG value,
    against a baseline that trained its whole network on 215,000 labelled mutations.
 
-2. **The wrong target actively hurts.** Vector-only pretraining scores 0.084 *below* random
-   initialisation. Fine-tuned in full, under exactly the protocol the baseline uses, it is
-   still 0.044 below. This is negative transfer: a vector-pretrained encoder is a worse
-   starting point than no pretraining at all, and training only partly undoes it.
+2. **The wrong target actively hurts.** Vector-only pretraining scores 0.099 *below* random
+   initialisation. In the pilot, fine-tuned in full under exactly the protocol the baseline
+   uses, it was still 0.044 below. This is negative transfer: a vector-pretrained encoder is
+   a worse starting point than no pretraining at all, and training only partly undoes it.
 
 3. **Effective rank points the wrong way.** The arm with the **highest** rank performs
    **worst**. Ranking the arms by embedding rank gives exactly the reverse of ranking them
@@ -126,15 +154,42 @@ combination, visible in our own run.
 
 | ID | Prediction | Outcome |
 |---|---|---|
-| H1 | Vector-only is worst on ΔΔG | **Holds**, and more strongly than expected: worse than no pretraining |
-| H2 | Both ≥ letter-only | **Holds, as a tie.** 0.643 vs 0.641 pooled, inside the seed spread |
-| H3 | Vector-only has the lowest effective rank | **Fails.** It has the highest, 84.3 vs 61.6 |
+| H1 | Vector-only is worst on ΔΔG | **Holds**, and more strongly than expected: 0.099 below no pretraining at all |
+| H2 | Both ≥ letter-only | **Holds, as a tie.** 0.643 vs 0.640, inside the seed spread |
+| H3 | Vector-only has the lowest effective rank | **Fails.** It has the highest, 74.2 vs 61.9 |
 
 H3 failing with a clear mechanism behind it is the most interesting outcome in the project.
 
 ---
 
 ## 5. What we built
+
+### Two datasets, and why both are needed
+
+The premise of the whole project is an asymmetry: protein **shapes** are abundant and free,
+protein **stability measurements** are scarce and expensive. If practising on the first
+makes a model better at the second, that is worth knowing.
+
+| | MegaScale | SCOPe / AlphaFold |
+|---|---|---|
+| what | 298 proteins with lab-measured ΔΔG | 11,566 / 25,000 structures with no labels |
+| role | the task itself: train, validate, test | pretraining: learn what proteins look like |
+| why this size | every value cost lab work | free, and limited only by download time |
+
+**MegaScale** (Tsuboyama et al. 2023) measured the stability of every single-residue mutant
+of hundreds of small protein domains — 271,231 measurements. That is the task.
+
+**SCOPe** is a classification of real experimentally determined protein domains. We use the
+ASTRAL subset already filtered to 40% sequence identity, so the corpus is not dominated by
+near-duplicates of the same fold.
+
+**AlphaFold DB** is DeepMind's prediction of the 3D shape of essentially every known
+protein, about 214 million of them, published free. We sample from Swiss-Prot, the
+hand-curated part of UniProt, and keep structures AlphaFold itself was confident about
+(mean pLDDT ≥ 70, which it writes into the B-factor column of every file).
+
+A detail worth noticing: the MegaScale structures are *also* AlphaFold predictions. They
+are simply a small set that happens to have lab measurements attached.
 
 ### Data, and why we checked it so hard
 
@@ -257,30 +312,65 @@ batching, metrics, the EMA teacher and overfitting checks.
 
 ## 9. Open, and what is next
 
-**Still to run**
+### Done (2026-11-20 to 21, A100 80 GB)
 
-- Seeds 1 and 2 for every arm. Everything above is one seed. The gaps are large relative to
-  the baseline spread, so they will very likely hold — but "very likely" is not a result.
-  About 6 hours; `scripts/run_grid.sh` runs it with resume.
-- `scripts/make_report.py` for the tables and figures.
+The whole experiment was re-run on one machine. The same seed gives slightly different
+results on Apple MPS and on CUDA, so mixing hardware inside a comparison would put noise
+into exactly the thing being measured. The Mac runs became the pilot, and re-running them
+doubled as a reproducibility check — which arm A passed.
+
+SCOPe grid, 4 arms × 3 seeds, about 2 hours. 6 to 7.7 seconds per pretraining epoch against
+24 to 33 on the Mac, so roughly 4× faster. The JEPA arms cost about 1.2× the letter arm,
+from the teacher's extra forward pass.
+
+### Still to do
+
+- The **AlphaFold grid**, same 4 arms × 3 seeds on the larger corpus, once the download
+  finishes. Keep `epochs: 100` unchanged, so corpus size is the only thing that differs.
 - A README that describes this experiment rather than the earlier Petnica project.
+- The blog post.
+
+### A note on the download rate
+
+AlphaFold DB rate-limits sustained programmatic access. 24 parallel requests were blocked
+within a thousand calls, 10 per second was refused immediately from a fresh IP, and about
+3 per second runs for hours without trouble. Since more than half of Swiss-Prot accessions
+have no model, roughly 57,000 requests are needed for 25,000 structures, hence five hours.
+This is a practical constraint on corpus size, not a flaw in the experiment, and worth one
+line in the methods.
 
 **Known limitations to state plainly**
 
 - 28 test proteins. Small, and the per-protein median over so few is noisy.
 - One encoder, one stability dataset, one corpus, three seeds. A controlled small
   experiment, not a ranking of methods in general.
-- The effective-rank sample is about 1,400 residues, not the 25,600 RankMe used — the test
-  split simply does not contain that many. The sample size belongs in every table that
-  reports rank.
+- Effective rank is measured on 80,275 held-out **pretraining** residues, not on MegaScale
+  test residues as the plan first proposed: the 28 test proteins hold only about 1,400
+  residues, far fewer than the 25,600 RankMe used. Measuring on the pretraining validation
+  set is consistent across arms and gives a large enough sample, but it describes the
+  embedding space the model was trained in rather than the one it transfers to. The sample
+  size belongs in every table that reports rank.
 - Pretraining structures are larger than the fine-tuning ones (median 126 vs 48).
 
-**AlphaFold**
+### What the second corpus is for
 
-Downloading in the background; 6,254 structures so far out of a target of 50,000.
-AlphaFold DB rate-limits sustained access, so this is a trickle rather than a sprint. It is
-**not required for the main result** — SCOPe is a complete corpus and the findings above
-stand on it. What it would add is a second, larger and more diverse corpus, and with it the
-scaling curve the plan wants: does more pretraining data help, and does the gap between
-arms change with corpus size? If the final grid runs on Colab, downloading there would
-sidestep the rate limit entirely.
+AlphaFold is **not required for the main result** — SCOPe is a complete corpus and every
+finding above rests on it. What it adds is an independent second corpus, twice the size,
+and with it the one question a single corpus cannot answer: **does more pretraining data
+change the ordering?**
+
+- If arm B is still worst at 25,000 structures, the finding is robust and not an artefact
+  of a small corpus.
+- If arm B catches up, then latent prediction was data-starved rather than broken, which
+  would be the more interesting outcome and would match the usual defence of JEPA methods.
+
+Either way a second corpus is worth more than more seeds on one, because it varies
+something that might actually matter rather than re-rolling the same dice.
+
+### Ideas we have not run
+
+Listed so they are not mistaken for things we tried and hid: a λ sweep for arm D
+(0.1 against 0.45), label efficiency at 1% and 10% of the training mutations, a frozen
+random encoder as arm E, longer pretraining (arm B's rank was still rising at epoch 99),
+and linear probes for burial or secondary structure to say *what* the letter arm learned
+that the vector arm did not.
