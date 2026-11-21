@@ -10,8 +10,17 @@ size belongs in every table that reports it.
 import torch
 
 
-def effective_rank(z, eps=1e-12):
-    """z: [N, K] -> a number between 1 and K."""
+def effective_rank(z, eps=1e-12, sample=None, seed=0):
+    """z: [N, K] -> a number between 1 and K.
+
+    `sample` fixes how many rows are used, because rank measured on more samples is not
+    comparable with rank measured on fewer. Corpora of different sizes would otherwise be
+    scored on different N: our SCOPe validation slice is 80,275 residues and the AlphaFold
+    one about 205,000.
+    """
+    if sample and z.shape[0] > sample:
+        index = torch.randperm(z.shape[0], generator=torch.Generator().manual_seed(seed))
+        z = z[index[:sample]]
     singular = torch.linalg.svdvals(z.float())
     p = singular / (singular.sum() + eps)
     entropy = -(p * (p + eps).log()).sum()

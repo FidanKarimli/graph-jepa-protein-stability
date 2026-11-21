@@ -111,7 +111,8 @@ class Running:
 
 
 @torch.no_grad()
-def evaluate(encoder, heads, loader, mask_rate, device, seed, teacher=None, lam=0.0):
+def evaluate(encoder, heads, loader, mask_rate, device, seed, teacher=None, lam=0.0,
+             rank_sample=None):
     encoder.eval()
     generator = torch.Generator().manual_seed(seed)       # the same masks every epoch
     running, embeddings = Running(), []
@@ -124,8 +125,9 @@ def evaluate(encoder, heads, loader, mask_rate, device, seed, teacher=None, lam=
 
     out = running.mean()
     z = torch.cat(embeddings)
-    out["effective_rank"] = effective_rank(z)
-    out["n_residues_for_rank"] = z.shape[0]
+    out["effective_rank"] = effective_rank(z, sample=rank_sample, seed=seed)
+    out["n_residues_for_rank"] = min(rank_sample, z.shape[0]) if rank_sample else z.shape[0]
+    out["n_residues_available"] = z.shape[0]
     out.update(per_dimension_variance(z))
     return out
 
@@ -218,7 +220,7 @@ def run(cfg, device=None, limit=None, verbose=True, resume=True):
 
         train_log = running.mean()
         val_log = evaluate(encoder, heads, loaders["val"], pt["mask_rate"], device, seed,
-                           teacher, lam)
+                           teacher, lam, pt.get("rank_sample"))
         seconds = time.time() - epoch_start
 
         if verbose:

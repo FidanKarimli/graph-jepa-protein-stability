@@ -32,6 +32,10 @@ pretrain:
   epochs: 100
   warmup_frac: 0.05     # then cosine decay
   val_fraction: 0.05    # held out to measure letter accuracy on unseen structures
+  # Effective rank is computed on this many residues, drawn from the validation slice.
+  # Rank measured on more samples is not comparable with rank measured on fewer, and the
+  # slice grows with the corpus: 80,275 residues for SCOPe, about 205,000 for AlphaFold.
+  rank_sample: 80000
   save_every: 10        # epochs between resume points
   predictor_layers: 2
   ema_start: 0.99       # the teacher moves freely early
