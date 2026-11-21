@@ -46,5 +46,5 @@ Seconds per pretraining epoch.
 
 ## Figures
 
-- `figures/effective_rank.png` — effective rank through pretraining
-- `figures/arm_comparison.png` — every seed's test score, by arm
+- `figures/effective_rank_scope.png` — effective rank through pretraining
+- `figures/arm_comparison_scope.png` — every seed's test score, by arm

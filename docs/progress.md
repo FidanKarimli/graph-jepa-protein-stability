@@ -3,10 +3,10 @@
 Running record of what we built, what we found and what we decided. Updated as we go.
 Last updated 2026-11-20. Plan of record: `../Project_IDEA.md`.
 
-**Status.** The main experiment is **done**: 4 arms × 3 seeds on an A100, SCOPe corpus.
-Every finding from the Mac pilot held, and arm A reproduced across two different machines.
-A second corpus of **26,057 AlphaFold structures** has been collected, 2.25× the size of
-SCOPe; the same grid on it is the next run (section 9).
+**Status.** The experiment is **complete**: 4 arms × 3 seeds on SCOPe, and the three
+pretrained arms × 3 seeds again on a second corpus 2.25× larger, all on one A100. Every
+finding from the Mac pilot held, arm A reproduced across two different machines, and the
+ordering survived the change of corpus. What remains is the write-up.
 
 ---
 
@@ -40,9 +40,11 @@ stability task.
 
 ## 2. Headline results
 
-**Three seeds per arm, SCOPe corpus (11,566 domains), A100.** Arms B, C and D fine-tune a
-frozen encoder; arm A has nothing to freeze, so it trains everything. Effective rank is
-measured on 80,275 held-out pretraining residues.
+**Three seeds per arm, two pretraining corpora, all on one A100.** Arms B, C and D
+fine-tune a frozen encoder; arm A has nothing to freeze, so it trains everything. Effective
+rank is measured on a fixed 80,000 held-out pretraining residues in both corpora.
+
+### SCOPe, 11,566 domains
 
 | Arm | pooled Spearman | per-protein median | RMSE | effective rank |
 |---|---|---|---|---|
@@ -51,16 +53,30 @@ measured on 80,275 held-out pretraining residues.
 | C — letter | 0.640 ± 0.005 | 0.688 ± 0.005 | 0.767 ± 0.006 | 61.9 ± 0.5 |
 | D — both | **0.643 ± 0.008** | **0.692 ± 0.010** | 0.768 ± 0.005 | 62.6 ± 0.3 |
 
-Two checks that the earlier single-seed runs could not give us:
+### AlphaFold, 26,057 structures (2.25× larger)
+
+| Arm | pooled Spearman | per-protein median | RMSE | effective rank |
+|---|---|---|---|---|
+| B — vector | 0.543 ± 0.012 | 0.563 ± 0.029 | 0.894 ± 0.021 | **108.2 ± 2.4** |
+| C — letter | 0.639 ± 0.003 | 0.698 ± 0.004 | 0.784 ± 0.025 | 64.6 ± 0.8 |
+| D — both | 0.636 ± 0.002 | 0.705 ± 0.005 | 0.781 ± 0.012 | 65.3 ± 0.6 |
+
+**More than twice the pretraining data changed almost nothing.** Arms C and D moved by
+0.001 and 0.007 pooled, both inside the tie threshold. Arm B improved by 0.037, a real gain
+by that threshold, and is still **0.062 below using no pretraining at all**. The ordering
+C ≈ D > A > B holds on a second, larger and differently constructed corpus.
+
+Two checks the single-seed runs could not give us:
 
 **The baseline reproduces across hardware.** Arm A scored 0.604 ± 0.006 on an Apple M4 Pro
 and 0.605 ± 0.008 on an A100 — different chips, different floating-point arithmetic, same
 answer. That is a strong check on the whole pipeline, and the reason we re-ran everything
 rather than mixing machines.
 
-**Arm B is not only worse, it is less stable.** Its seed spread is ±0.023 against arm C's
-±0.005, four times noisier. The vector objective produces features that are both weaker and
-more dependent on initialisation.
+**Arm B is not only worse, it is less stable.** Its seed spread is ±0.023 on SCOPe against
+arm C's ±0.005, and its per-protein spread is ±0.029 on AlphaFold against ±0.004. The
+vector objective produces features that are both weaker and more dependent on
+initialisation.
 
 The Mac pilot, kept for comparison, also ran each arm with a full (unfrozen) encoder:
 
@@ -78,7 +94,7 @@ Reference points, not targets: ThermoMPNN reports 0.725 on this test set with mu
 pretraining, and 0.642 from scratch. The earlier Petnica project got 0.548 from scratch and
 0.600 pretrained.
 
-**Three findings.**
+**Six findings.**
 
 1. **Pretraining helps, but only with the right target.** Letter pretraining beats the
    no-pretraining baseline by 0.035 pooled and 0.045 per-protein, several times the tie
@@ -103,6 +119,21 @@ pretraining, and 0.642 from scratch. The earlier Petnica project got 0.548 from 
    same direction with a weaker effect.
 
    The final ordering is **D ≈ C > A > B**.
+
+5. **More data does not rescue the latent objective, and does not help the letter one
+   either.** On a corpus 2.25× larger, arms C and D are unchanged within the tie threshold,
+   and arm B gains 0.037 while remaining 0.062 below no pretraining at all. The usual
+   defence of JEPA methods — that they need more data — does not hold here at this scale.
+
+6. **The pretext task improved a lot while the downstream task did not move at all.** On the
+   larger corpus arm C's held-out letter accuracy rose from **0.267 to 0.353**, a 32%
+   relative improvement at the task it was trained on. Its ΔΔG score went from 0.640 to
+   0.639. Arm D is the same: 0.266 to 0.350, and 0.643 to 0.636.
+
+   The model got substantially better at predicting hidden residues and not one bit better
+   at predicting stability. Pretext-task performance is not a proxy for downstream value —
+   which, together with finding 3, means neither of the two things one would normally
+   measure without labels (pretext loss, embedding rank) predicted what we cared about.
 
 ---
 
@@ -147,6 +178,14 @@ nothing about stability. **Escaping collapse is not the same as learning somethi
 A related observation from arm D: at epoch 1 its rank was 47.3, not 7.7. **The letter loss
 prevents the collapse from happening at all** — which is ProteinJEPA's argument for the
 combination, visible in our own run.
+
+**The larger corpus makes the reversal starker.** On AlphaFold, arm B collapses again at
+epoch 1 (rank 10.7, so this is a property of the method rather than of SCOPe) and then
+climbs to **106 of 128 dimensions** — far higher than on SCOPe. It is still the worst arm by
+0.1 Spearman. Meanwhile arm C's rank *falls* during training, 71.5 at epoch 1 down to 65.3.
+The letter objective concentrates the representation; the latent objective spreads it. One
+of those produces features that transfer, and it is not the one that looks healthier by the
+standard diagnostic.
 
 ---
 
@@ -331,21 +370,15 @@ SCOPe grid, 4 arms × 3 seeds, about 2 hours. 6 to 7.7 seconds per pretraining e
 24 to 33 on the Mac, so roughly 4× faster. The JEPA arms cost about 1.2× the letter arm,
 from the teacher's extra forward pass.
 
+AlphaFold grid, arms B/C/D × 3 seeds on 26,057 structures, 253 minutes. About 19 s per
+epoch against SCOPe's 7.8, scaling with the corpus as expected.
+
 ### Still to do
 
-- The **AlphaFold grid**, same 4 arms × 3 seeds on the larger corpus, once the download
-  finishes. Keep `epochs: 100` unchanged, so corpus size is the only thing that differs.
-- A README that describes this experiment rather than the earlier Petnica project.
 - The blog post.
-
-### A note on the download rate
-
-AlphaFold DB rate-limits sustained programmatic access. 24 parallel requests were blocked
-within a thousand calls, 10 per second was refused immediately from a fresh IP, and about
-3 per second runs for hours without trouble. Since more than half of Swiss-Prot accessions
-have no model, roughly 57,000 requests are needed for 25,000 structures, hence five hours.
-This is a practical constraint on corpus size, not a flaw in the experiment, and worth one
-line in the methods.
+- Remove the earlier Petnica project (`gjepa/`, `notebooks/`, `materials/`) from this repo,
+  or move it aside: the README now describes this experiment, and a reader currently finds
+  two unexplained projects.
 
 **Known limitations to state plainly**
 
@@ -382,16 +415,20 @@ at 100 while the corpus is larger — the number of optimiser steps, which rises
 well. A result here says "the ordering held, or did not, on a second corpus". It is **not**
 a scaling curve, which would need the same corpus at two sizes.
 
-Before running it, three things are worth doing (none done yet):
+Two of three preparations were made before running it, and one was deliberately skipped:
 
-1. **Pin the corpus.** SCOPe has `pretrain_ids.txt`; AlphaFold has no equivalent, so the
-   corpus is implicitly "whatever is in the shards". Rate-limited accessions are marked
-   retryable, so re-running the downloader would silently grow it.
-2. **Decide epochs or steps**, and say which. A step-matched run (about 44 epochs) for one
-   arm would show whether any change comes from the extra data or the extra training.
-3. **Fix the effective-rank sample size.** The validation slice is 5% of the corpus, so
-   AlphaFold's rank would be computed on roughly 205,000 residues against SCOPe's 80,275,
-   and rank is not strictly comparable across different sample sizes.
+1. **The corpus is pinned.** `data/processed/alphafold_ids.txt` lists all 26,057
+   accessions, with a summary in `alphafold_corpus.md`. Without it the corpus would have
+   been only "whatever is in the shards", and the 878 rate-limited accessions are marked
+   retryable, so a later download run would have grown it silently.
+2. **The effective-rank sample is fixed at 80,000 residues** in both corpora
+   (`eval/rank.py`), chosen so SCOPe's already-reported ranks are unaffected — its
+   validation slice held 80,275.
+3. **Epochs were held at 100 rather than matched on steps**, so the AlphaFold runs took
+   2.25× more optimiser updates. Since arms C and D did not improve despite both more data
+   and more training, that confound does not threaten the conclusion. It would matter if
+   we were claiming a gain. A step-matched run of arm B (about 44 epochs) would settle
+   whether its +0.037 comes from the data or the extra steps; not run.
 
 ### Ideas we have not run
 

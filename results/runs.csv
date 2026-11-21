@@ -19,3 +19,12 @@ A,2,none,none,,full,41,0.6596562626044141,0.6061641747847191,0.6313955556713785,
 B,2,vector,scope,results/checkpoints/encoder_B_scope_seed2.pt,frozen,47,0.5722443316910532,0.5259802641253667,0.5496540706407218,0.9010763764381409,28,13.8,cuda,ad947de,configs/arm_b.yaml
 C,2,letter,scope,results/checkpoints/encoder_C_scope_seed2.pt,frozen,47,0.6908486574622654,0.6452188569242945,0.6931942514911882,0.7656681537628174,28,13.3,cuda,ad947de,configs/arm_c.yaml
 D,2,both,scope,results/checkpoints/encoder_D_scope_seed2.pt,frozen,49,0.694143582077027,0.64550492249389,0.6855995902668821,0.7625899314880371,28,13.4,cuda,ad947de,configs/arm_d.yaml
+B,0,vector,alphafold,results/checkpoints/encoder_B_alphafold_seed0.pt,frozen,27,0.5606198758060906,0.5314321255125214,0.5300860637374194,0.8999310731887817,28,8.9,cuda,8aeabb4,configs/arm_b.yaml
+C,0,letter,alphafold,results/checkpoints/encoder_C_alphafold_seed0.pt,frozen,64,0.6977845599056383,0.6407965636302722,0.7024127291152105,0.763613224029541,28,17.5,cuda,8aeabb4,configs/arm_c.yaml
+D,0,both,alphafold,results/checkpoints/encoder_D_alphafold_seed0.pt,frozen,80,0.6997115775719992,0.6373475134165741,0.6999293720788033,0.771701455116272,28,21.0,cuda,8aeabb4,configs/arm_d.yaml
+B,1,vector,alphafold,results/checkpoints/encoder_B_alphafold_seed1.pt,frozen,23,0.5625657724564369,0.5550858033497252,0.5783667795899153,0.8711144924163818,28,8.0,cuda,8aeabb4,configs/arm_b.yaml
+C,1,letter,alphafold,results/checkpoints/encoder_C_alphafold_seed1.pt,frozen,95,0.7008982436480279,0.6351343087723688,0.6967416569311191,0.8122778534889221,28,22.7,cuda,8aeabb4,configs/arm_c.yaml
+D,1,both,alphafold,results/checkpoints/encoder_D_alphafold_seed1.pt,frozen,74,0.7035827583299761,0.6341132354407027,0.7073720300182502,0.7945082187652588,28,19.5,cuda,8aeabb4,configs/arm_d.yaml
+B,2,vector,alphafold,results/checkpoints/encoder_B_alphafold_seed2.pt,frozen,37,0.5527008422836268,0.5418141253749,0.5814990567124833,0.9115754961967468,28,11.1,cuda,8aeabb4,configs/arm_b.yaml
+C,2,letter,alphafold,results/checkpoints/encoder_C_alphafold_seed2.pt,frozen,59,0.6848905970367037,0.6399663775234721,0.694325008456066,0.775120735168457,28,16.1,cuda,8aeabb4,configs/arm_c.yaml
+D,2,both,alphafold,results/checkpoints/encoder_D_alphafold_seed2.pt,frozen,59,0.679801613458507,0.6366602916186227,0.7084464160293145,0.7780119776725769,28,16.3,cuda,8aeabb4,configs/arm_d.yaml

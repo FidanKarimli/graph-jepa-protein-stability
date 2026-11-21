@@ -146,10 +146,11 @@ def main():
     parser.add_argument("--corpus-key", default="scope",
                         help="value of the corpus column in runs.csv to report on")
     args = parser.parse_args()
+    key = args.corpus_key
 
     FIGURES.mkdir(parents=True, exist_ok=True)
-    runs = load_runs(args.corpus_key)
-    logs = load_pretrain_logs(args.corpus_key)
+    runs = load_runs(key)
+    logs = load_pretrain_logs(key)
 
     metrics = ["test_pooled_spearman", "test_per_protein_median_spearman", "test_rmse"]
     frozen = summarise(runs[runs.finetune_mode == "frozen"], metrics)
@@ -204,13 +205,14 @@ Seconds per pretraining epoch.
 
 ## Figures
 
-- `figures/effective_rank.png` — effective rank through pretraining
-- `figures/arm_comparison.png` — every seed's test score, by arm
+- `figures/effective_rank_{key}.png` — effective rank through pretraining
+- `figures/arm_comparison_{key}.png` — every seed's test score, by arm
 """
-    (RESULTS / "report.md").write_text(report)
+    (RESULTS / f"report_{key}.md").write_text(report)
 
+    # Named per corpus, so reporting on one does not overwrite the other's figures.
     for theme in ("light", "dark"):
-        suffix = "" if theme == "light" else "_dark"
+        suffix = f"_{key}" + ("" if theme == "light" else "_dark")
         if not logs.empty:
             fig = rank_figure(logs, theme)
             fig.savefig(FIGURES / f"effective_rank{suffix}.png", dpi=200,
@@ -222,7 +224,7 @@ Seconds per pretraining epoch.
         plt.close(fig)
 
     print(report)
-    print(f"wrote {RESULTS / 'report.md'} and figures in {FIGURES}")
+    print(f"wrote {RESULTS / f'report_{key}.md'} and figures in {FIGURES}")
 
 
 if __name__ == "__main__":
