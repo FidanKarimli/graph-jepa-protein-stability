@@ -190,7 +190,7 @@ scripts/           downloads, the grid runner, the report
 tests/             45 tests
 results/           runs.csv, per-epoch logs, reports, figures
 docs/progress.md   the full record of what we did, found and decided
-Project_IDEA.md    the plan, with every decision and its reason
+docs/plan.md       the plan, with every decision and its reason
 petnica_project/   our earlier work from the Petnica course, kept as it was
 ```
 

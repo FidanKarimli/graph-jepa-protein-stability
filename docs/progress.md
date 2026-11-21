@@ -1,7 +1,7 @@
 # Progress report
 
 Running record of what we built, what we found and what we decided. Updated as we go.
-Last updated 2026-11-20. Plan of record: `../Project_IDEA.md`.
+Last updated 2026-11-20. Plan of record: `plan.md`.
 
 **Status.** The experiment is **complete**: 4 arms × 3 seeds on SCOPe, and the three
 pretrained arms × 3 seeds again on a second corpus 2.25× larger, all on one A100. Every
