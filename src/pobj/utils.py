@@ -49,9 +49,27 @@ def git_commit():
 
 
 def append_row(path, row):
-    """Append one result row to a csv, writing the header if the file is new."""
+    """Append one result row to a csv, writing the header if the file is new.
+
+    If the row's columns differ from the file's header (a field was added or
+    dropped), the file is rewritten with the union of columns so it stays
+    parseable; missing values are left empty.
+    """
     import pandas as pd
 
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame([row]).to_csv(path, mode="a", header=not path.exists(), index=False)
+    new = pd.DataFrame([row])
+    if not path.exists():
+        new.to_csv(path, index=False)
+        return
+    existing_cols = list(pd.read_csv(path, nrows=0).columns)
+    if list(new.columns) == existing_cols:
+        new.to_csv(path, mode="a", header=False, index=False)
+    elif set(new.columns) <= set(existing_cols):
+        new.reindex(columns=existing_cols).to_csv(path, mode="a", header=False, index=False)
+    else:
+        old = pd.read_csv(path, dtype=str, keep_default_na=False)
+        columns = existing_cols + [c for c in new.columns if c not in existing_cols]
+        merged = pd.concat([old, new.astype(str)], ignore_index=True).reindex(columns=columns)
+        merged.to_csv(path, index=False)

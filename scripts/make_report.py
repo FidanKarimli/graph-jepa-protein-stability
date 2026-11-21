@@ -26,15 +26,21 @@ THEME = {
 }
 
 
-def load_runs():
+def load_runs(corpus_key):
     df = pd.read_csv(RESULTS / "runs.csv")
     df["arm"] = df.arm.astype(str)
-    return df
+    if "corpus" in df:
+        # Arm A has no pretraining, so its corpus is "none". Older pilot rows are
+        # tagged "pilot" and left out so they don't double-count a seed.
+        df = df[df.corpus.isin([corpus_key, "none"])]
+    # A re-run of the same configuration supersedes the earlier row.
+    return df.drop_duplicates(["arm", "seed", "finetune_mode"], keep="last")
 
 
-def load_pretrain_logs():
+def load_pretrain_logs(corpus_key):
     frames = []
-    for path in sorted(RESULTS.glob("pretrain_*_seed*.csv")):
+    # Only this corpus's logs; pilot runs live in pretrain_*_pilot_seed*.csv.
+    for path in sorted(RESULTS.glob(f"pretrain_*_{corpus_key}_seed*.csv")):
         frame = pd.read_csv(path)
         # A resumed run re-logs the epochs after its last save point.
         frame = frame.drop_duplicates(["arm", "seed", "epoch"], keep="last")
@@ -137,11 +143,13 @@ def comparison_figure(runs, theme):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", default="SCOPe, 11,566 domains")
+    parser.add_argument("--corpus-key", default="scope",
+                        help="value of the corpus column in runs.csv to report on")
     args = parser.parse_args()
 
     FIGURES.mkdir(parents=True, exist_ok=True)
-    runs = load_runs()
-    logs = load_pretrain_logs()
+    runs = load_runs(args.corpus_key)
+    logs = load_pretrain_logs(args.corpus_key)
 
     metrics = ["test_pooled_spearman", "test_per_protein_median_spearman", "test_rmse"]
     frozen = summarise(runs[runs.finetune_mode == "frozen"], metrics)

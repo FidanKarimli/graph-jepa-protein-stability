@@ -1,0 +1,50 @@
+nohup: ignoring input
+=== arm a, scope, seed 0  (17:45)
+    fine-tuning
+    test  pooled spearman 0.6114  per-protein median 0.6516 over 28 proteins  rmse 0.7971
+=== arm b, scope, seed 0  (17:46)
+    pretraining -> results/logs/b_scope_seed0.log
+    fine-tuning
+    test  pooled spearman 0.5100  per-protein median 0.5500 over 28 proteins  rmse 0.8883
+=== arm c, scope, seed 0  (17:59)
+    pretraining -> results/logs/c_scope_seed0.log
+    fine-tuning
+    test  pooled spearman 0.6358  per-protein median 0.6855 over 28 proteins  rmse 0.7732
+=== arm d, scope, seed 0  (18:09)
+    pretraining -> results/logs/d_scope_seed0.log
+    fine-tuning
+    test  pooled spearman 0.6484  per-protein median 0.7039 over 28 proteins  rmse 0.7714
+=== arm a, scope, seed 1  (18:22)
+    fine-tuning
+    test  pooled spearman 0.5963  per-protein median 0.6471 over 28 proteins  rmse 0.8152
+=== arm b, scope, seed 1  (18:22)
+    pretraining -> results/logs/b_scope_seed1.log
+    fine-tuning
+    test  pooled spearman 0.4806  per-protein median 0.5183 over 28 proteins  rmse 0.9187
+=== arm c, scope, seed 1  (18:36)
+    pretraining -> results/logs/c_scope_seed1.log
+    fine-tuning
+    test  pooled spearman 0.6401  per-protein median 0.6848 over 28 proteins  rmse 0.7613
+=== arm d, scope, seed 1  (18:46)
+    pretraining -> results/logs/d_scope_seed1.log
+    fine-tuning
+    test  pooled spearman 0.6340  per-protein median 0.6860 over 28 proteins  rmse 0.7694
+=== arm a, scope, seed 2  (19:00)
+    fine-tuning
+    test  pooled spearman 0.6062  per-protein median 0.6314 over 28 proteins  rmse 0.7943
+=== arm b, scope, seed 2  (19:00)
+    pretraining -> results/logs/b_scope_seed2.log
+    fine-tuning
+    test  pooled spearman 0.5260  per-protein median 0.5497 over 28 proteins  rmse 0.9011
+=== arm c, scope, seed 2  (19:12)
+    pretraining -> results/logs/c_scope_seed2.log
+    fine-tuning
+    test  pooled spearman 0.6452  per-protein median 0.6932 over 28 proteins  rmse 0.7657
+=== arm d, scope, seed 2  (19:24)
+    pretraining -> results/logs/d_scope_seed2.log
+    fine-tuning
+    test  pooled spearman 0.6455  per-protein median 0.6856 over 28 proteins  rmse 0.7626
+
+finished in 111 min
+rows in results/runs.csv: 20
+now run: python scripts/make_report.py
