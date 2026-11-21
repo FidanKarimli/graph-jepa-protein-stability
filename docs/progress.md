@@ -4,9 +4,10 @@ Running record of what we built, what we found and what we decided. Updated as w
 Last updated 2026-11-20. Plan of record: `../Project_IDEA.md`.
 
 **Status.** The main experiment is **done**: 4 arms × 3 seeds on an A100, SCOPe corpus.
-Every finding from the Mac pilot held. A second, larger corpus (AlphaFold) is still
-downloading, and the same grid will be run on it to see whether more pretraining data
-changes the ordering.
+Every finding from the Mac pilot held, and arm A reproduced across two different machines.
+A second corpus from AlphaFold was collected but stalled at 10,111 structures, which is the
+same size as SCOPe rather than larger; what remains to decide is whether to finish it
+(section 9).
 
 ---
 
@@ -352,20 +353,32 @@ line in the methods.
   size belongs in every table that reports rank.
 - Pretraining structures are larger than the fine-tuning ones (median 126 vs 48).
 
-### What the second corpus is for
+### The second corpus, and where it stopped
 
 AlphaFold is **not required for the main result** — SCOPe is a complete corpus and every
-finding above rests on it. What it adds is an independent second corpus, twice the size,
-and with it the one question a single corpus cannot answer: **does more pretraining data
-change the ordering?**
+finding above rests on it.
 
-- If arm B is still worst at 25,000 structures, the finding is robust and not an artefact
-  of a small corpus.
-- If arm B catches up, then latent prediction was data-starved rather than broken, which
-  would be the more interesting outcome and would match the usual defence of JEPA methods.
+What it was meant to add is the one question a single corpus cannot answer: **does more
+pretraining data change the ordering?** If arm B is still worst with twice the data, the
+finding is not an artefact of a small corpus. If arm B catches up, then latent prediction
+was data-starved rather than broken, which is the usual defence of JEPA methods and would
+be the more interesting outcome.
 
-Either way a second corpus is worth more than more seeds on one, because it varies
-something that might actually matter rather than re-rolling the same dice.
+**As collected, it cannot answer that.** The download stalled at **10,111 structures**,
+essentially the same size as SCOPe's 11,566, so running the grid on it would compare corpus
+*type* — AlphaFold's predicted structures of curated proteins against SCOPe's real
+experimental domains — rather than corpus size. That is a legitimate question but a
+different one, and it would have to be described as such.
+
+Three ways forward, none of them urgent:
+
+1. **Finish the download to 25,000 or more**, then run the grid. Gets the size comparison,
+   but needs five to ten hours of trickling at the three requests per second the server
+   tolerates.
+2. **Run the grid on the 10,111 as they are**, and report it honestly as a corpus-type
+   comparison.
+3. **Stop here.** The main experiment is complete, reproduced across hardware, and the
+   findings are clear.
 
 ### Ideas we have not run
 
