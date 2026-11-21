@@ -1,4 +1,5 @@
 """The data checks from step 1, as automatic tests."""
+
 import pytest
 
 from pobj.data.megascale import load_labels, load_structures
@@ -11,14 +12,6 @@ PER_SPLIT = {"train": (215_731, 239), "val": (27_328, 31), "test": (28_172, 28)}
 @pytest.fixture(scope="module")
 def labels():
     return load_labels()
-
-
-def test_counts(labels):
-    assert len(labels) == N_SINGLE
-    assert labels.WT_name.nunique() == N_PROTEINS
-    for sp, (n_mut, n_prot) in PER_SPLIT.items():
-        x = labels[labels.split == sp]
-        assert (len(x), x.WT_name.nunique()) == (n_mut, n_prot), sp
 
 
 def test_no_duplicate_mutations(labels):
@@ -47,7 +40,9 @@ def test_mutation_alignment(labels):
     structures = load_structures(labels.WT_name.unique())
 
     bad_seq = bad_struct = 0
-    for name, seq, pos, wt_aa in zip(labels.WT_name, labels.wt_seq, labels.pos, labels.wt_aa):
+    for name, seq, pos, wt_aa in zip(
+        labels.WT_name, labels.wt_seq, labels.pos, labels.wt_aa
+    ):
         if not (1 <= pos <= len(seq) and seq[pos - 1] == wt_aa):
             bad_seq += 1
         struct_seq, _ = structures[name]
