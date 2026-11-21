@@ -5,9 +5,8 @@ Last updated 2026-11-20. Plan of record: `../Project_IDEA.md`.
 
 **Status.** The main experiment is **done**: 4 arms × 3 seeds on an A100, SCOPe corpus.
 Every finding from the Mac pilot held, and arm A reproduced across two different machines.
-A second corpus from AlphaFold was collected but stalled at 10,111 structures, which is the
-same size as SCOPe rather than larger; what remains to decide is whether to finish it
-(section 9).
+A second corpus of **26,057 AlphaFold structures** has been collected, 2.25× the size of
+SCOPe; the same grid on it is the next run (section 9).
 
 ---
 
@@ -284,12 +283,20 @@ the scale grew with depth. Adding one barely moved the mean score but **cut the 
 seed spread from 0.023 to 0.008**, three times more sensitive. It mattered more than it
 looked, because arm B's cosine loss and the rank diagnostics both read those embeddings.
 
-**A rate-limit lesson.** The AlphaFold download ran at 3.2 structures/s. More than half of
-Swiss-Prot accessions have no AlphaFold model, and our code retried each 404 three times
-with sleeps — most of the run was threads sleeping over answers already received. Fixing
-that took it to 68/s, at which point AlphaFold DB blocked our IP for hours. The honest
-summary: the slowness was our bug, but the server's sustainable rate is only a few
-requests per second.
+**A rate limit, misdiagnosed twice.** The AlphaFold download crawled at 3.2 structures/s
+with over half of all attempts coming back as skips. We blamed missing models: the code
+retried every failure three times with sleeps, so a protein AlphaFold simply does not have
+cost three seconds of waiting. Removing that retry took the rate to 68/s — and AlphaFold DB
+promptly blocked our IP for hours, because 24 parallel requests is far past what it allows.
+
+The final clean run shows the first diagnosis was also wrong. Of 30,000 attempts, **87%
+succeeded**; only 3.8% were missing models, 6.4% failed the pLDDT ≥ 70 filter and 2.9% were
+rate-limited. The original 55% skip rate was mostly the server throttling us, which we had
+been counting as "no model here".
+
+Two lessons worth keeping: a 404 and a 429 look alike in a skip counter and mean opposite
+things, and a burst benchmark tells you what a server *can* serve, not what it will
+tolerate. The sustainable rate was about 3 requests per second.
 
 Tests now standing: 42 across data alignment, graph construction, the leak rule, masking,
 batching, metrics, the EMA teacher and overfitting checks.
@@ -353,32 +360,38 @@ line in the methods.
   size belongs in every table that reports rank.
 - Pretraining structures are larger than the fine-tuning ones (median 126 vs 48).
 
-### The second corpus, and where it stopped
+### The second corpus
 
 AlphaFold is **not required for the main result** — SCOPe is a complete corpus and every
-finding above rests on it.
+finding above rests on it. What it adds is the one question a single corpus cannot answer:
+does the ordering survive a different, larger corpus?
 
-What it was meant to add is the one question a single corpus cannot answer: **does more
-pretraining data change the ordering?** If arm B is still worst with twice the data, the
-finding is not an artefact of a small corpus. If arm B catches up, then latent prediction
-was data-starved rather than broken, which is the usual defence of JEPA methods and would
-be the more interesting outcome.
+**Collected: 26,057 structures**, from 30,000 attempts (87% success; 6.4% below the pLDDT
+threshold, 3.8% with no model, 2.9% rate-limited). That is **2.25× SCOPe's 11,566**.
 
-**As collected, it cannot answer that.** The download stalled at **10,111 structures**,
-essentially the same size as SCOPe's 11,566, so running the grid on it would compare corpus
-*type* — AlphaFold's predicted structures of curated proteins against SCOPe's real
-experimental domains — rather than corpus size. That is a legitimate question but a
-different one, and it would have to be described as such.
+| | SCOPe | AlphaFold |
+|---|---|---|
+| structures | 11,566 | 26,057 |
+| kind | real, experimentally determined domains | predicted structures of curated proteins |
+| median length | 126 | 157 |
+| steps per epoch at batch 32 | 344 | 774 |
 
-Three ways forward, none of them urgent:
+**Four things change at once**, and that limits what a difference between the two runs can
+be attributed to: corpus size, corpus type, protein length, and — because epochs are held
+at 100 while the corpus is larger — the number of optimiser steps, which rises 2.25× as
+well. A result here says "the ordering held, or did not, on a second corpus". It is **not**
+a scaling curve, which would need the same corpus at two sizes.
 
-1. **Finish the download to 25,000 or more**, then run the grid. Gets the size comparison,
-   but needs five to ten hours of trickling at the three requests per second the server
-   tolerates.
-2. **Run the grid on the 10,111 as they are**, and report it honestly as a corpus-type
-   comparison.
-3. **Stop here.** The main experiment is complete, reproduced across hardware, and the
-   findings are clear.
+Before running it, three things are worth doing (none done yet):
+
+1. **Pin the corpus.** SCOPe has `pretrain_ids.txt`; AlphaFold has no equivalent, so the
+   corpus is implicitly "whatever is in the shards". Rate-limited accessions are marked
+   retryable, so re-running the downloader would silently grow it.
+2. **Decide epochs or steps**, and say which. A step-matched run (about 44 epochs) for one
+   arm would show whether any change comes from the extra data or the extra training.
+3. **Fix the effective-rank sample size.** The validation slice is 5% of the corpus, so
+   AlphaFold's rank would be computed on roughly 205,000 residues against SCOPe's 80,275,
+   and rank is not strictly comparable across different sample sizes.
 
 ### Ideas we have not run
 
