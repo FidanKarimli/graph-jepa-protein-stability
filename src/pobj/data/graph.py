@@ -1,4 +1,4 @@
-"""Coordinates -> residue graph (section 7.1 of Project_IDEA.md).
+"""Coordinates -> residue graph.
 
 One node per residue at its CA atom, joined to its k nearest neighbours in 3D. Residues far
 apart in the chain can end up adjacent in the graph, which is the whole reason for using
@@ -16,7 +16,7 @@ from .megascale import AA_IDX
 UNK = 20                 # 'X' and anything not one of the 20 standard amino acids
 N_TOKENS = 21            # 20 amino acids + UNK. The mask token is added by the model.
 
-K_NEIGHBOURS = 16        # ProteinWorkshop's choice, see section 7.1
+K_NEIGHBOURS = 16        # ProteinWorkshop's choice
 
 
 def knn_edges(ca: torch.Tensor, k: int = K_NEIGHBOURS) -> torch.Tensor:

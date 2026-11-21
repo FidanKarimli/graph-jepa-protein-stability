@@ -1,3 +1,4 @@
+"""Metric checks, including one case where pooled and per-protein disagree."""
 import numpy as np
 import pytest
 

@@ -1,4 +1,4 @@
-"""Node and edge features (section 7.2 of Project_IDEA.md).
+"""Node and edge features.
 
 Nothing here may depend on which amino acid a residue is. Only backbone atoms are read,
 never side chains, since side chain shape would give away the identity and let arm C solve

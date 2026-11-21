@@ -3,12 +3,12 @@
 Usage:
     python -m pobj.train.pretrain --config configs/arm_c.yaml [--seed 0] [--limit 1000]
 
---limit trains on a subset, which is how we time one epoch before committing to a corpus
+--limit trains on a subset, which is how we timed one epoch before committing to a corpus
 size. The encoder weights go to results/checkpoints/, and the per-epoch log, including
 effective rank, to results/.
 
-A run saves its full state every save_every epochs and picks up from there if it is
-started again, so a six hour grid survives a sleeping laptop. Pass --fresh to ignore it.
+A run saves its full state every save_every epochs and picks up from there if started
+again, so an interrupted grid does not have to start over. Pass --fresh to ignore it.
 """
 import argparse
 import math

@@ -1,8 +1,12 @@
 """The unlabelled structures we pretrain on.
 
-SCOPe domains, as graphs built by exactly the same code as the MegaScale ones, so the
-encoder sees the same kind of input in both stages. Which domains are used is decided once
-by scripts/build_pretrain_set.py and recorded in data/processed/pretrain_ids.txt.
+Two corpora: SCOPe domains from ASTRAL, and AlphaFold predictions sampled from Swiss-Prot.
+Both are built into graphs by exactly the same code as the MegaScale ones, so the encoder
+sees the same kind of input in both stages.
+
+Which structures each corpus contains is decided once and written down —
+pretrain_ids.txt for SCOPe, alphafold_ids.txt for the other — so neither can change
+underneath a result.
 """
 from pathlib import Path
 

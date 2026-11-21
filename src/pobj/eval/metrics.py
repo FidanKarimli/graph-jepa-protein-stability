@@ -1,4 +1,4 @@
-"""Stability metrics (section 8.1).
+"""Stability metrics.
 
 Pooled and per-protein Spearman answer different questions and are never comparable with
 each other: pooled asks whether the model ranks all mutations together, per-protein asks

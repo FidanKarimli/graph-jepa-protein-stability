@@ -1,4 +1,4 @@
-"""Hiding residues for the pretraining task (section 7.4).
+"""Hiding residues for the pretraining task.
 
 We replace the residue type of a fifth of the residues with a learned mask token and leave
 the structure untouched, so the question put to the model is "what belongs at this position

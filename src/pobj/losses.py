@@ -1,4 +1,4 @@
-"""The two pretraining losses, and the combination (section 7.5)."""
+"""The two pretraining losses, and the combination used by arm D."""
 import torch.nn.functional as F
 from torch import Tensor
 

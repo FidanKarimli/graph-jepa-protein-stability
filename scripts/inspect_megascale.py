@@ -1,4 +1,8 @@
-"""Step 1a: look at the ThermoMPNN MegaScale CSVs before writing any loader."""
+"""A first look at the ThermoMPNN MegaScale csv files: counts, splits, ddG sign.
+
+Run before writing any loader, so the loader is built against what the files
+actually contain rather than what a paper says they contain.
+"""
 
 import pandas as pd
 

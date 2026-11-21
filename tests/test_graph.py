@@ -1,4 +1,5 @@
-"""Graph construction checks, including the leak rule from section 7.2."""
+"""Graph construction checks, including the rule that no feature may leak
+the residue identity."""
 import numpy as np
 import pytest
 import torch

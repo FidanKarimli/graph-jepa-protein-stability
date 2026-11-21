@@ -1,4 +1,4 @@
-"""Effective rank of an embedding matrix (section 8.2).
+"""Effective rank of an embedding matrix.
 
 The RankMe quantity: the entropy of the normalised singular values, exponentiated. A matrix
 whose rows all point the same way scores near 1; one using every direction equally scores

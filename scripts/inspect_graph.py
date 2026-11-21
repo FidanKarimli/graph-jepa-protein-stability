@@ -1,4 +1,4 @@
-"""Step 1d: build the graphs, print statistics, and draw one protein.
+"""Build the residue graphs, print their statistics, and draw one protein.
 
 Run from the repo root:  python scripts/inspect_graph.py
 Writes results/figures/example_graph.png

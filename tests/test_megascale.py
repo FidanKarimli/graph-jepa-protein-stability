@@ -1,4 +1,8 @@
-"""The data checks from step 1, as automatic tests."""
+"""Checks on the MegaScale labels and the structures they refer to.
+
+Labels and structures come from different sources, so these run before anything is
+trained: a mismatch here would send every mutation to the wrong residue silently.
+"""
 
 import pytest
 

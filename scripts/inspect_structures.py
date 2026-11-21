@@ -1,4 +1,9 @@
-"""Step 1b: check that the AlphaFold structures match the ThermoMPNN labels."""
+"""Check that the structures and the labels describe the same proteins.
+
+Labels come from the ThermoMPNN repo and structures from Zenodo, so nothing guarantees
+they agree. A numbering offset here would send every mutation to the wrong residue
+without raising an error.
+"""
 
 import glob
 import os
