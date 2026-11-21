@@ -22,7 +22,8 @@ from ..models.heads import DDGHead, DDGModel
 from ..utils import append_row, get_device, git_commit, load_config, set_seed
 
 
-def build_model(cfg, pretrained=None, freeze=False):
+def build_model(cfg: dict, pretrained: Path | str | None = None,
+                freeze: bool = False) -> DDGModel:
     enc = Encoder(dim=cfg["encoder"]["dim"],
                   layers=cfg["encoder"]["layers"],
                   dropout=cfg["encoder"]["dropout"])
@@ -37,7 +38,8 @@ def build_model(cfg, pretrained=None, freeze=False):
 
 
 @torch.no_grad()
-def predict(model, loader, device):
+def predict(model: nn.Module, loader: DataLoader,
+            device: torch.device) -> tuple[np.ndarray, np.ndarray, list[str]]:
     model.eval()
     pred, true, proteins = [], [], []
     for batch in loader:
@@ -48,7 +50,8 @@ def predict(model, loader, device):
     return np.concatenate(pred), np.concatenate(true), proteins
 
 
-def train_epoch(model, loader, optimizer, loss_fn, device):
+def train_epoch(model: nn.Module, loader: DataLoader, optimizer: torch.optim.Optimizer,
+                loss_fn: nn.Module, device: torch.device) -> float:
     model.train()
     total, n = 0.0, 0
     for batch in loader:
@@ -62,7 +65,7 @@ def train_epoch(model, loader, optimizer, loss_fn, device):
     return total / n
 
 
-def run(cfg, device=None, verbose=True):
+def run(cfg: dict, device: torch.device | None = None, verbose: bool = True) -> dict:
     seed = cfg["seed"]
     set_seed(seed)
     device = device or get_device()
@@ -146,7 +149,7 @@ def run(cfg, device=None, verbose=True):
     }
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--base", default="configs/base.yaml")

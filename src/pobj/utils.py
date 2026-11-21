@@ -7,14 +7,14 @@ import torch
 import yaml
 
 
-def set_seed(seed):
+def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 
-def get_device():
+def get_device() -> torch.device:
     if torch.cuda.is_available():
         return torch.device("cuda")
     if torch.backends.mps.is_available():
@@ -22,7 +22,7 @@ def get_device():
     return torch.device("cpu")
 
 
-def load_config(*paths):
+def load_config(*paths: str | Path) -> dict:
     """Merge yaml files left to right, so later files override earlier ones."""
     merged = {}
     for path in paths:
@@ -30,7 +30,7 @@ def load_config(*paths):
     return merged
 
 
-def merge(base, extra):
+def merge(base: dict, extra: dict) -> dict:
     for key, value in extra.items():
         if isinstance(value, dict) and isinstance(base.get(key), dict):
             merge(base[key], value)
@@ -39,7 +39,7 @@ def merge(base, extra):
     return base
 
 
-def git_commit():
+def git_commit() -> str:
     try:
         out = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
                              capture_output=True, text=True, check=True)
@@ -48,7 +48,7 @@ def git_commit():
         return "unknown"
 
 
-def append_row(path, row):
+def append_row(path: Path | str, row: dict) -> None:
     """Append one result row to a csv, writing the header if the file is new.
 
     If the row's columns differ from the file's header (a field was added or

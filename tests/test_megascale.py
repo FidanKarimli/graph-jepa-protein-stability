@@ -14,6 +14,19 @@ def labels():
     return load_labels()
 
 
+def test_counts(labels):
+    """Catches a partial or wrong download before anything is trained on it.
+
+    The ThermoMPNN paper quotes 272,712; the difference is 1,481 wild-type reference rows,
+    which load_labels drops.
+    """
+    assert len(labels) == N_SINGLE
+    assert labels.WT_name.nunique() == N_PROTEINS
+    for split, (n_mutations, n_proteins) in PER_SPLIT.items():
+        part = labels[labels.split == split]
+        assert (len(part), part.WT_name.nunique()) == (n_mutations, n_proteins), split
+
+
 def test_no_duplicate_mutations(labels):
     assert not labels.duplicated(["WT_name", "mut_type"]).any()
 

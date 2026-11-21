@@ -29,12 +29,12 @@ from ..models.heads import LetterHead, Predictor
 from ..utils import append_row, get_device, git_commit, load_config, set_seed
 
 
-def run_tag(cfg):
+def run_tag(cfg: dict) -> str:
     """Names a run by arm, corpus and seed, so two corpora never share a checkpoint."""
     return f"{cfg['arm']}_{cfg['pretrain']['corpus']}_seed{cfg['seed']}"
 
 
-def split_graphs(graphs, val_fraction, seed):
+def split_graphs(graphs: list, val_fraction: float, seed: int) -> tuple[list, list]:
     """A held-out slice of the corpus, so letter accuracy is measured on unseen structures."""
     order = torch.randperm(len(graphs), generator=torch.Generator().manual_seed(seed))
     n_val = max(1, int(len(graphs) * val_fraction))
@@ -43,7 +43,7 @@ def split_graphs(graphs, val_fraction, seed):
     return train, val
 
 
-def letter_frequencies(graphs):
+def letter_frequencies(graphs: list) -> torch.Tensor:
     """The most common amino acid, as the baseline any real model has to beat."""
     counts = torch.zeros(20)
     for g in graphs:
@@ -51,7 +51,10 @@ def letter_frequencies(graphs):
     return counts / counts.sum()
 
 
-def step_losses(encoder, heads, batch, mask_rate, generator=None, teacher=None, lam=0.0):
+def step_losses(encoder: nn.Module, heads: nn.ModuleDict, batch, mask_rate: float,
+                generator: torch.Generator | None = None,
+                teacher: EMATeacher | None = None,
+                lam: float = 0.0) -> tuple[torch.Tensor, dict[str, float], int]:
     """One masked forward pass for whichever arm is being trained.
 
     -> (loss to backward through, numbers to log, how many residues were masked)
@@ -82,7 +85,7 @@ def step_losses(encoder, heads, batch, mask_rate, generator=None, teacher=None, 
     return loss, stats, int(mask.sum())
 
 
-def build_heads(cfg, target):
+def build_heads(cfg: dict, target: str) -> nn.ModuleDict:
     """The heads each arm needs. The encoder is identical in every case."""
     dim = cfg["encoder"]["dim"]
     heads = {}
@@ -101,12 +104,12 @@ class Running:
     def __init__(self):
         self.totals, self.n = {}, 0
 
-    def add(self, stats, weight):
+    def add(self, stats: dict[str, float], weight: int) -> None:
         self.n += weight
         for key, value in stats.items():
             self.totals[key] = self.totals.get(key, 0.0) + value * weight
 
-    def mean(self):
+    def mean(self) -> dict[str, float]:
         return {key: value / self.n for key, value in self.totals.items()}
 
 
@@ -132,7 +135,8 @@ def evaluate(encoder, heads, loader, mask_rate, device, seed, teacher=None, lam=
     return out
 
 
-def run(cfg, device=None, limit=None, verbose=True, resume=True):
+def run(cfg: dict, device: torch.device | None = None, limit: int | None = None,
+        verbose: bool = True, resume: bool = True) -> dict:
     seed = cfg["seed"]
     set_seed(seed)
     device = device or get_device()
@@ -260,7 +264,7 @@ def run(cfg, device=None, limit=None, verbose=True, resume=True):
             "n_pretrain_structures": len(train), "git_commit": git_commit()}
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--base", default="configs/base.yaml")

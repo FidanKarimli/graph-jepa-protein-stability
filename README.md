@@ -137,9 +137,11 @@ training examples cost 239 encoder passes per epoch.
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install torch                       # or the CUDA build your driver supports
-pip install torch_geometric pandas scipy scikit-learn matplotlib pyyaml tqdm pytest tabulate
-                                        # tabulate is what pandas uses for markdown tables
+
+# torch first, separately: the right wheel depends on your CUDA driver, and a mismatch
+# only shows up at import time. On macOS or cpu, plain `pip install torch`.
+pip install torch --index-url https://download.pytorch.org/whl/cu128
+pip install -r requirements.txt
 pip install -e .
 
 bash scripts/download_megascale.sh      # 90 MB, labels and splits
@@ -177,14 +179,19 @@ python -m pobj.train.finetune --config configs/arm_c.yaml --seed 0
 
 ```
 src/pobj/
-  data/      megascale.py  graph.py  features.py  masking.py  pretrain_set.py  dataset.py
-  models/    encoder.py  heads.py  ema.py
-  eval/      metrics.py  rank.py
-  train/     pretrain.py  finetune.py
-configs/     base.yaml + one file per arm
-scripts/     downloads, the grid runner, the report
-results/     runs.csv, per-epoch logs, figures
-docs/        progress.md, the full record of what we did and found
+  data/            megascale.py  graph.py  features.py  masking.py
+                   pretrain_set.py  dataset.py
+  models/          encoder.py  heads.py  ema.py
+  eval/            metrics.py  rank.py
+  train/           pretrain.py  finetune.py
+  losses.py  utils.py
+configs/           base.yaml + one file per arm
+scripts/           downloads, the grid runner, the report
+tests/             45 tests
+results/           runs.csv, per-epoch logs, reports, figures
+docs/progress.md   the full record of what we did, found and decided
+Project_IDEA.md    the plan, with every decision and its reason
+petnica_project/   our earlier work from the Petnica course, kept as it was
 ```
 
 ---
@@ -217,9 +224,15 @@ identity, so the stricter rule cost 7 extra domains. The removed list is kept in
 
 ## Credits
 
-Thanks to our mentor and the Petnica team for the course this grew out of:
+This grew out of a project at the Petnica Summer Institute course on Scientific Machine
+Learning, which is kept in [`petnica_project/`](petnica_project/) as it was. The two share
+no code. Thanks to our mentor and the Petnica team for the course:
 <https://github.com/zenwor/sciml26_gjepa>. Our team repo from the course:
 <https://github.com/paumartinez160/sciml26_gjepa>.
+
+Two things the earlier project recorded but could not explain — embeddings collapsing to an
+effective rank of 5–8, and a JEPA loss that rose during training — are answered here. They
+are the same phenomenon, seen from two sides.
 
 Building on: Tsuboyama et al. 2023 (MegaScale), Dieckhaus et al. 2024 (ThermoMPNN),
 Ofer et al. 2026 (ProteinJEPA), Jamasb et al. 2024 (ProteinWorkshop), Garrido et al. 2023

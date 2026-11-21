@@ -6,13 +6,15 @@ given its surroundings". The geometry carries no residue identity (see features.
 answer cannot be read off the inputs.
 """
 import torch
+from torch import Tensor
 
 from ..models.encoder import MASK
 
 MASK_RATE = 0.2
 
 
-def sample_mask(batch, rate=MASK_RATE, generator=None):
+def sample_mask(batch, rate: float = MASK_RATE,
+                generator: torch.Generator | None = None) -> Tensor:
     """-> bool [N] on the batch's device. Every graph gets at least one masked residue.
 
     The draw happens on the cpu so that a seed gives the same masks whatever the model is
@@ -30,7 +32,7 @@ def sample_mask(batch, rate=MASK_RATE, generator=None):
     return mask.to(batch.x.device)
 
 
-def apply_mask(batch, mask):
+def apply_mask(batch, mask: Tensor) -> tuple[Tensor, Tensor]:
     """Replace the masked residue types with the mask token, leaving the batch unchanged.
 
     -> (x with the mask applied, the true residue types at the masked positions)

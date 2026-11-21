@@ -12,6 +12,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.pytest.ini_options]
-# tests/test_protein_correctness.py belongs to the earlier Petnica project under
-# gjepa/ and has its own dependencies.
-addopts = "--ignore=tests/test_protein_correctness.py"
+# petnica_project/ is the earlier course project, kept as it was. It has its own
+# dependencies and expects to be run from its own directory.
+testpaths = ["tests"]
+addopts = "--ignore=petnica_project"

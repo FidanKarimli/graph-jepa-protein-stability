@@ -9,6 +9,7 @@ Facts verified on 2026-11-20 (scripts/inspect_megascale.py, inspect_structures.p
   * Every structure's sequence equals the csv's wt_seq, so `pos` is 1-based into both
     and node index = pos - 1. All single chain A, no missing backbone atoms.
 """
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -30,7 +31,8 @@ PDB_DIR = Path("data/raw/megascale_pdbs/AlphaFold_model_PDBs")
 BACKBONE = ("N", "CA", "C", "O")
 
 
-def load_labels(raw_dir=RAW_DIR, splits=SPLITS):
+def load_labels(raw_dir: Path | str = RAW_DIR,
+                splits: Sequence[str] = SPLITS) -> pd.DataFrame:
     """-> DataFrame[WT_name, mut_type, wt_aa, pos, mut_aa, ddG, wt_seq, split].
 
     `pos` is 1-based. Node index into the structure is pos - 1.
@@ -50,7 +52,7 @@ def load_labels(raw_dir=RAW_DIR, splits=SPLITS):
     return df.drop(columns=["ddG_ML"])
 
 
-def read_pdb(path):
+def read_pdb(path: Path | str) -> tuple[str, np.ndarray]:
     """Backbone parse of one pdb file.
 
     -> (seq: str of length N, coords: float32 [N, 4, 3] for N/CA/C/O)
@@ -78,7 +80,8 @@ def read_pdb(path):
     return seq, coords
 
 
-def load_structures(names, pdb_dir=PDB_DIR):
+def load_structures(names: Iterable[str],
+                    pdb_dir: Path | str = PDB_DIR) -> dict[str, tuple[str, np.ndarray]]:
     """-> {WT_name: (seq, coords[N, 4, 3])} for the given names."""
     out = {}
     for name in sorted(set(names)):

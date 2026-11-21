@@ -7,7 +7,10 @@ its task without learning anything. tests/test_graph.py enforces this.
 Everything is an angle or a distance, so the features do not change when a protein is
 rotated or shifted.
 """
+from collections.abc import Sequence
+
 import torch
+from torch import Tensor
 
 # Backbone atom order used by megascale.read_pdb -> coords[N, 4, 3]
 N_ATOM, CA_ATOM, C_ATOM, O_ATOM = 0, 1, 2, 3
@@ -18,7 +21,7 @@ SEP_BINS = (1, 2, 3, 4, 8, 16, 32)       # upper edges; 8 buckets with the final
 EDGE_FEAT_DIM = RBF_DIM + len(SEP_BINS) + 1
 
 
-def dihedral(p0, p1, p2, p3):
+def dihedral(p0: Tensor, p1: Tensor, p2: Tensor, p3: Tensor) -> Tensor:
     """Torsion angle of four points, in radians.
 
     p*: [K, 3] -> [K]. The angle of the p1->p2 bond, looking down it, between the planes
@@ -35,7 +38,7 @@ def dihedral(p0, p1, p2, p3):
     return torch.atan2(y, x)
 
 
-def planar_angle(p0, p1, p2):
+def planar_angle(p0: Tensor, p1: Tensor, p2: Tensor) -> Tensor:
     """Angle at p1 between p0 and p2, in radians. p*: [K, 3] -> [K]."""
     a = p0 - p1
     b = p2 - p1
@@ -43,7 +46,7 @@ def planar_angle(p0, p1, p2):
     return torch.acos(cos.clamp(-1 + 1e-7, 1 - 1e-7))
 
 
-def _sincos(angle, valid):
+def _sincos(angle: Tensor, valid: Tensor) -> Tensor:
     """[K] radians + [K] bool -> [K, 2]. Undefined angles become (0, 0).
 
     We store angles as (sin, cos) because -pi and +pi are the same rotation but look far
@@ -54,7 +57,7 @@ def _sincos(angle, valid):
     return out * valid.unsqueeze(-1)
 
 
-def node_features(coords):
+def node_features(coords: Tensor) -> Tensor:
     """Backbone geometry per residue. coords: [N, 4, 3] -> [N, 10].
 
     Columns: phi, psi, omega, virtual CA bond angle, virtual CA torsion, each as (sin, cos).
@@ -85,7 +88,8 @@ def node_features(coords):
     ], dim=-1)                                           # [N, 10]
 
 
-def rbf(dist, n_bins=RBF_DIM, d_min=2.0, d_max=22.0):
+def rbf(dist: Tensor, n_bins: int = RBF_DIM,
+        d_min: float = 2.0, d_max: float = 22.0) -> Tensor:
     """Radial basis expansion of a distance. [E] -> [E, n_bins].
 
     Gaussian bumps spread along the distance axis, so 6.2 A becomes a soft one-hot over
@@ -96,7 +100,7 @@ def rbf(dist, n_bins=RBF_DIM, d_min=2.0, d_max=22.0):
     return torch.exp(-(((dist.unsqueeze(-1) - centers) / sigma) ** 2))
 
 
-def sep_onehot(sep, bins=SEP_BINS):
+def sep_onehot(sep: Tensor, bins: Sequence[int] = SEP_BINS) -> Tensor:
     """Sequence separation |i - j|, bucketed. [E] -> [E, len(bins) + 1].
 
     Neighbours in the chain are joined by a bond; neighbours only in space are a contact
@@ -111,7 +115,7 @@ def sep_onehot(sep, bins=SEP_BINS):
     return out
 
 
-def edge_features(ca, edge_index):
+def edge_features(ca: Tensor, edge_index: Tensor) -> Tensor:
     """ca: [N, 3], edge_index: [2, E] -> [E, EDGE_FEAT_DIM]."""
     src, dst = edge_index
     dist = (ca[src] - ca[dst]).norm(dim=-1)              # [E]

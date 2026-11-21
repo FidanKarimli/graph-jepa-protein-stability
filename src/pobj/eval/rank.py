@@ -8,9 +8,11 @@ It is only comparable between runs computed on the same number of residues, so t
 size belongs in every table that reports it.
 """
 import torch
+from torch import Tensor
 
 
-def effective_rank(z, eps=1e-12, sample=None, seed=0):
+def effective_rank(z: Tensor, eps: float = 1e-12,
+                   sample: int | None = None, seed: int = 0) -> float:
     """z: [N, K] -> a number between 1 and K.
 
     `sample` fixes how many rows are used, because rank measured on more samples is not
@@ -27,7 +29,7 @@ def effective_rank(z, eps=1e-12, sample=None, seed=0):
     return float(entropy.exp())
 
 
-def per_dimension_variance(z):
+def per_dimension_variance(z: Tensor) -> dict[str, float]:
     """A few large variances with the rest near zero is the other sign of collapse."""
     var = z.float().var(dim=0)
     return {"var_mean": float(var.mean()),

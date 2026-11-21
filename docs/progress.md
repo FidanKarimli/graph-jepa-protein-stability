@@ -376,9 +376,6 @@ epoch against SCOPe's 7.8, scaling with the corpus as expected.
 ### Still to do
 
 - The blog post.
-- Remove the earlier Petnica project (`gjepa/`, `notebooks/`, `materials/`) from this repo,
-  or move it aside: the README now describes this experiment, and a reader currently finds
-  two unexplained projects.
 
 **Known limitations to state plainly**
 

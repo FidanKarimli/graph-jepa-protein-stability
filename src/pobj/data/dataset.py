@@ -6,6 +6,7 @@ encoder passes per epoch.
 """
 from pathlib import Path
 
+import pandas as pd
 import torch
 from torch_geometric.data import Data
 
@@ -22,7 +23,9 @@ class ProteinData(Data):
         return super().__inc__(key, value, *args, **kwargs)
 
 
-def load_all(raw_dir=None, pdb_dir=None, k=K_NEIGHBOURS, cache_dir="data/processed"):
+def load_all(raw_dir: Path | str | None = None, pdb_dir: Path | str | None = None,
+             k: int = K_NEIGHBOURS,
+             cache_dir: Path | str = "data/processed") -> tuple[pd.DataFrame, dict[str, Data]]:
     """Labels and graphs, cached after the first call."""
     kwargs = {}
     if raw_dir is not None:
@@ -44,7 +47,8 @@ def load_all(raw_dir=None, pdb_dir=None, k=K_NEIGHBOURS, cache_dir="data/process
     return labels, graphs
 
 
-def protein_items(labels, graphs, split=None):
+def protein_items(labels: pd.DataFrame, graphs: dict[str, Data],
+                  split: str | None = None) -> list["ProteinData"]:
     """-> list of ProteinData, one per protein."""
     rows = labels if split is None else labels[labels.split == split]
     items = []
@@ -65,7 +69,7 @@ def protein_items(labels, graphs, split=None):
     return items
 
 
-def batch_protein_names(batch):
+def batch_protein_names(batch: Data) -> list[str]:
     """The protein each mutation in a batch belongs to, for per-protein metrics."""
     names = batch.name if isinstance(batch.name, list) else [batch.name]
     return [names[i] for i in batch.batch[batch.mut_node].tolist()]

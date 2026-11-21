@@ -10,10 +10,12 @@ import copy
 
 import torch
 import torch.nn as nn
+from torch import Tensor
 
 
 class EMATeacher(nn.Module):
-    def __init__(self, student, momentum_start=0.99, momentum_end=0.9999, total_steps=1):
+    def __init__(self, student: nn.Module, momentum_start: float = 0.99,
+                 momentum_end: float = 0.9999, total_steps: int = 1) -> None:
         super().__init__()
         self.encoder = copy.deepcopy(student)
         for p in self.encoder.parameters():
@@ -23,13 +25,13 @@ class EMATeacher(nn.Module):
         self.total_steps = max(1, total_steps)
         self.steps = 0
 
-    def momentum(self):
+    def momentum(self) -> float:
         """Rises from start to end, so the teacher moves freely early and settles later."""
         fraction = min(1.0, self.steps / self.total_steps)
         return self.start + (self.end - self.start) * fraction
 
     @torch.no_grad()
-    def update(self, student):
+    def update(self, student: nn.Module) -> None:
         m = self.momentum()
         for teacher_p, student_p in zip(self.encoder.parameters(), student.parameters()):
             teacher_p.mul_(m).add_(student_p.detach(), alpha=1 - m)
@@ -38,7 +40,7 @@ class EMATeacher(nn.Module):
         self.steps += 1
 
     @torch.no_grad()
-    def forward(self, batch):
+    def forward(self, batch) -> Tensor:
         """The targets: the teacher's view of the graph with nothing hidden."""
         self.encoder.eval()
         return self.encoder.encode(batch).detach()

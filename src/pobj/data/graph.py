@@ -19,7 +19,7 @@ N_TOKENS = 21            # 20 amino acids + UNK. The mask token is added by the 
 K_NEIGHBOURS = 16        # ProteinWorkshop's choice, see section 7.1
 
 
-def knn_edges(ca, k=K_NEIGHBOURS):
+def knn_edges(ca: torch.Tensor, k: int = K_NEIGHBOURS) -> torch.Tensor:
     """k nearest neighbours by CA distance, symmetrised. ca: [N, 3] -> [2, E].
 
     A dense distance matrix is fine here: our proteins are 32-72 residues.
@@ -37,7 +37,8 @@ def knn_edges(ca, k=K_NEIGHBOURS):
     return torch.unique(edges, dim=1)
 
 
-def build_graph(seq, coords, name=None, k=K_NEIGHBOURS):
+def build_graph(seq: str, coords: np.ndarray, name: str | None = None,
+                k: int = K_NEIGHBOURS) -> Data:
     """seq: str of length N, coords: [N, 4, 3] array -> torch_geometric Data.
 
     Fields:
@@ -63,7 +64,8 @@ def build_graph(seq, coords, name=None, k=K_NEIGHBOURS):
     )
 
 
-def build_graphs(structures, k=K_NEIGHBOURS):
+def build_graphs(structures: dict[str, tuple[str, np.ndarray]],
+                 k: int = K_NEIGHBOURS) -> dict[str, Data]:
     """{name: (seq, coords)} -> {name: Data}."""
     return {name: build_graph(seq, coords, name=name, k=k)
             for name, (seq, coords) in structures.items()}
