@@ -1,12 +1,11 @@
-# Progress report
+# Method, results and decisions
 
-A running record of what I built, what I found and what I decided. Updated as I go.
-Last updated 2026-11-20.
+The full record of how this experiment was built, what it found, and why each choice was
+made.
 
-**Status.** The experiment is **complete**: 4 arms × 3 seeds on SCOPe, and the three
-pretrained arms × 3 seeds again on a second corpus 2.25 times larger, all on one A100. Every
-finding from the Mac pilot held, arm A reproduced across two different machines, and the
-ordering survived the change of corpus. What remains is the write-up.
+**Summary.** 4 arms × 3 seeds on SCOPe, and the three pretrained arms × 3 seeds again on a
+second corpus 2.25 times larger, all on one A100. Every finding from the pilot held, arm A
+reproduced across two different machines, and the ordering survived the change of corpus.
 
 ---
 
@@ -138,7 +137,7 @@ pretraining, and 0.642 from scratch. The earlier Petnica project got 0.548 from 
 
 ## 3. The rank result, in detail
 
-This is the part I did not expect, and the part most worth writing about.
+This is the part I did not expect.
 
 Effective rank (the RankMe quantity) measures how many of the 128 embedding dimensions a
 model actually uses. It is the standard label-free diagnostic in self-supervised learning. A
@@ -306,8 +305,8 @@ moderate effects. It cannot detect an effect of 0.01, and I should not claim one
 
 ## 7. Bugs I found, and how
 
-Worth writing about, because each one was caught by a test that checked a known quantity, not
-by reading the code.
+Each of these was caught by a test that checked a known quantity, not by reading the code.
+That is the argument for writing the tests first.
 
 **A metric that divided by the wrong number.** The first pretraining run reported a loss of
 0.0046 with 0.000 accuracy, which cannot both be true. The number of masked residues was
@@ -361,14 +360,14 @@ batching, metrics, the EMA teacher and overfitting checks.
 
 ---
 
-## 9. Open, and what is next
+## 9. Compute, limitations and what is not tested
 
-### Done (2026-11-20 to 21, A100 80 GB)
+### Compute
 
-The whole experiment was re-run on one machine. The same seed gives slightly different results
-on Apple MPS and on CUDA, so mixing hardware inside a comparison would put noise into exactly
-the thing being measured. The Mac runs became the pilot, and re-running them doubled as a
-reproducibility check, which arm A passed.
+The whole experiment was run on a single A100 80 GB. The same seed gives slightly different
+results on Apple MPS and on CUDA, so mixing hardware inside a comparison would put noise into
+exactly the thing being measured. The earlier Mac runs became the pilot, and re-running everything on
+the A100 doubled as a reproducibility check, which arm A passed.
 
 SCOPe grid, 4 arms × 3 seeds, about 2 hours. 6 to 7.7 seconds per pretraining epoch against 24
 to 33 on the Mac, so roughly 4 times faster. The JEPA arms cost about 1.2 times the letter
@@ -377,11 +376,7 @@ arm, from the teacher's extra forward pass.
 AlphaFold grid, arms B/C/D × 3 seeds on 26,057 structures, 253 minutes. About 19 s per epoch
 against SCOPe's 7.8, scaling with the corpus as expected.
 
-### Still to do
-
-- The blog post.
-
-**Known limitations to state plainly**
+### Limitations
 
 - 28 test proteins. That is not many, and a median over so few is noisy.
 - One encoder, one stability dataset, one corpus, three seeds. A controlled small experiment,
@@ -431,9 +426,9 @@ Two of three preparations were made before running it, and one was deliberately 
    claiming a gain. A step-matched run of arm B (about 44 epochs) would settle whether its
    +0.037 comes from the data or the extra steps. Not run.
 
-### Ideas I have not run
+### Not tried
 
-Listed so they are not mistaken for things I tried and hid: a λ sweep for arm D (0.1 against
+Listed so they are not mistaken for things I ran and left out: a λ sweep for arm D (0.1 against
 0.45), label efficiency at 1% and 10% of the training mutations, a frozen random encoder as
 arm E, longer pretraining (arm B's rank was still rising at epoch 99), and linear probes for
 burial or secondary structure to say *what* the letter arm learned that the vector arm did

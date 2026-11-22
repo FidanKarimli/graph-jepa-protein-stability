@@ -15,9 +15,9 @@ Everything else is held fixed: the same graph, encoder, corpus, masking rate, op
 seeds. Any difference comes from the pretraining target alone. Each pretrained model is then
 used to predict how much a single mutation destabilises a protein (ΔΔG).
 
-**Author:** Fidan Karimli. This grew out of a project I did with Pau Martínez at the Petnica
-Summer Institute (Scientific Machine Learning, August 2026). The experiment here is my own
-follow-up.
+**Author:** Fidan Karimli. This started in August 2026 as a project with Pau Martínez at the
+Petnica Summer Institute. We finished that one with two results we could not explain, and
+they kept bothering me. This repository is where I went back and worked them out.
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -26,10 +26,9 @@ follow-up.
 
 ## Results
 
-Three seeds per arm, two pretraining corpora, MegaScale for the task, all on one A100 I
-rented for a weekend. Arms B, C and D fine-tune a **frozen** encoder. Arm A has nothing to
-freeze, so it trains everything. Effective rank is measured on a fixed 80,000 held-out
-pretraining residues.
+Three seeds per arm, two pretraining corpora, MegaScale for the task, all on one A100. Arms
+B, C and D fine-tune a **frozen** encoder. Arm A has nothing to freeze, so it trains
+everything. Effective rank is measured on a fixed 80,000 held-out pretraining residues.
 
 **SCOPe, 11,566 experimentally determined domains**
 
@@ -192,7 +191,7 @@ configs/           base.yaml + one file per arm
 scripts/           downloads, the grid runner, the report
 tests/             45 tests
 results/           runs.csv, per-epoch logs, reports, figures
-docs/progress.md   the full record of what I did, found and decided
+docs/progress.md   method, results, decisions and limitations in full
 petnica_project/   the earlier work from the Petnica course, kept as it was
 ```
 
@@ -236,9 +235,9 @@ learned to ask this kind of question in the first place.
 Course repo: <https://github.com/zenwor/sciml26_gjepa>. Our team repo from the course:
 <https://github.com/paumartinez160/sciml26_gjepa>.
 
-The earlier project recorded two things we could not explain at the time: embeddings
-collapsing to an effective rank of 5 to 8, and a JEPA loss that rose during training. I can
-explain both now, and it turned out they were the same thing.
+The two loose ends were embeddings collapsing to an effective rank of 5 to 8, and a JEPA
+loss that rose during training instead of falling. Both are answered here, and it turned out
+they were the same thing seen from different angles.
 
 Building on: Tsuboyama et al. 2023 (MegaScale), Dieckhaus et al. 2024 (ThermoMPNN),
 Ofer et al. 2026 (ProteinJEPA), Jamasb et al. 2024 (ProteinWorkshop), Garrido et al. 2023
